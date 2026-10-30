@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AGAS Design Studio
  * Description: Custom WooCommerce template gallery, online canvas designer, and order integration.
- * Version: 0.1.9
+ * Version: 0.1.10
  * Requires Plugins: woocommerce
  * Text Domain: agas-design-studio
  */
@@ -10,7 +10,7 @@
 defined('ABSPATH') || exit;
 
 final class AGAS_Design_Studio {
-    const VERSION = '0.1.9';
+    const VERSION = '0.1.10';
     const REST_NS = 'agas-design/v1';
 
     public static function boot() {
@@ -395,7 +395,8 @@ public static function upgrade_logo_slots() {
             'products' => $products,
             'saveTemplateAllowed' => current_user_can('manage_woocommerce'),
             'readonly' => !empty($_GET['agas_readonly']),
-            'returnToCart' => !empty($_GET['agas_from_cart']),
+            'returnToCart' => !empty($_GET['agas_from_cart']) && $design_id > 0,
+            'cartEditKey' => isset($_GET['agas_cart_key']) ? sanitize_text_field(wp_unslash($_GET['agas_cart_key'])) : '',
         );
         wp_add_inline_script('agas-studio', 'window.AGAS_DS = ' . wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ';', 'before');
         ob_start();
@@ -423,6 +424,23 @@ public static function upgrade_logo_slots() {
             <aside class="agas-config"><h3>Product setup</h3><label>Size <select id="agas-size"><option value="3x2">3 x 2 ft</option><option value="4x2">4 x 2 ft</option><option value="6x3">6 x 3 ft</option><option value="8x4">8 x 4 ft</option><option value="custom">Custom size</option></select></label><div class="agas-two"><label>Width <input type="number" id="agas-width" min="0.25" max="20" step="0.25" value="3"></label><label>Height <input type="number" id="agas-height" min="0.25" max="20" step="0.25" value="2"></label></div><label>Unit <select id="agas-unit"><option value="ft">Feet</option><option value="in">Inches</option><option value="cm">Centimeters</option></select></label><label class="agas-check"><input id="agas-two-sided" type="checkbox"> Add back side</label><label class="agas-check"><input id="agas-grommets" type="checkbox"> Grommets</label><label class="agas-check"><input id="agas-pocket" type="checkbox"> Pole pocket</label><label>Design side <div class="agas-side-switch"><button type="button" class="active" id="agas-side-front">Front</button><button type="button" id="agas-side-back" disabled>Back</button></div></label><p class="agas-hint">Pricing is recalculated on the server at checkout.</p></aside>
           </div>
           <footer class="agas-bottombar"><label>Zoom <input id="agas-zoom" type="range" min="50" max="125" value="100"><span id="agas-zoom-out">100%</span></label><label class="agas-check"><input type="checkbox" id="agas-guides" checked> Safety guides</label><a href="mailto:support@example.com?subject=AGAS%20Design%20Studio%20Help" title="Demo help address">Need Help?</a><span class="agas-price">Price <strong id="agas-price">Calculating...</strong></span><button type="button" class="agas-primary" id="agas-continue"><?php echo $editing_template ? 'Save Template' : 'Continue to Cart'; ?></button></footer>
+          <div class="agas-cart-choice-overlay" id="agas-cart-choice" hidden>
+            <section class="agas-cart-choice-dialog" role="dialog" aria-modal="true" aria-labelledby="agas-cart-choice-title" aria-describedby="agas-cart-choice-help">
+              <h2 id="agas-cart-choice-title">What would you like to do with your changes?</h2>
+              <p id="agas-cart-choice-help">Choose whether to update your existing cart design or keep it and add a separate version.</p>
+              <div class="agas-cart-choice-options">
+                <button type="button" id="agas-choice-replace" class="agas-cart-choice-option">
+                  <strong>Replace existing item</strong>
+                  <span>Update the design already in your cart. Do not create another product.</span>
+                </button>
+                <button type="button" id="agas-choice-add" class="agas-cart-choice-option">
+                  <strong>Add as a separate item</strong>
+                  <span>Keep your original design unchanged and save a new independent copy.</span>
+                </button>
+              </div>
+              <button type="button" id="agas-choice-cancel" class="agas-choice-cancel">Cancel — keep editing</button>
+            </section>
+          </div>
         </div>
         <?php
         return ob_get_clean();
@@ -595,6 +613,20 @@ public static function upgrade_logo_slots() {
         return $cart_item;
     }
 
+    /** Decide whether a save updates the existing cart line or creates a new one. */
+    public static function cart_choice_action($mode, $existing) {
+        if (!in_array($mode, array('auto', 'replace', 'add'), true)) {
+            return new WP_Error('invalid_cart_mode', 'Invalid cart operation.');
+        }
+        if ($mode === 'replace' && !$existing) {
+            return new WP_Error('cart_item_missing', 'The original item is no longer in your cart. Return to the cart and edit it again.');
+        }
+        if ($mode === 'add' && $existing) {
+            return new WP_Error('design_already_in_cart', 'This saved design is already in the cart. Save a separate copy before adding it again.');
+        }
+        return ($mode === 'replace' || ($mode === 'auto' && $existing)) ? 'replace' : 'add';
+    }
+
     public static function add_to_cart() {
         if (!function_exists('WC')) wp_die('WooCommerce is not available.', '', array('response' => 503));
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), 'agas_design_cart')) wp_die('Security check failed.', '', array('response' => 403));
@@ -621,18 +653,42 @@ public static function upgrade_logo_slots() {
             WC()->cart->session->get_cart_from_session();
         }
 
-        // Returning from the cart editor should update the existing line
-        // instead of duplicating the SAME design. Different design IDs are
-        // separate lines, including two designs of the same WooCommerce item.
+        // Explicitly honor the customer's choice when returning from a cart edit.
+        // A separate version MUST have a new saved design ID so the original
+        // cart line, thumbnail, metadata and artwork cannot mutate later.
+        $cart_mode = isset($_POST['cart_mode']) ? sanitize_key(wp_unslash($_POST['cart_mode'])) : 'auto';
+        if (!in_array($cart_mode, array('auto', 'replace', 'add'), true)) {
+            wp_die('Invalid cart operation.', '', array('response' => 400));
+        }
+        $source_id = isset($_POST['source_design_id']) ? absint($_POST['source_design_id']) : 0;
+        if ($cart_mode === 'replace' && $source_id !== $id) {
+            wp_die('A replacement must refer to the original saved design.', '', array('response' => 409));
+        }
+        $source_cart_key = isset($_POST['source_cart_key']) ? sanitize_text_field(wp_unslash($_POST['source_cart_key'])) : '';
         $existing_key = '';
-        foreach (WC()->cart->get_cart() as $item_key => $cart_item) {
-            if ((int) ($cart_item['agas_design_id'] ?? 0) === $id
-                && (int) ($cart_item['product_id'] ?? 0) === $product_id) {
-                $existing_key = $item_key;
-                break;
+        $cart_contents = WC()->cart->get_cart();
+        if ($cart_mode === 'replace' && $source_cart_key !== '') {
+            $selected = $cart_contents[$source_cart_key] ?? null;
+            if (!is_array($selected) || (int) ($selected['agas_design_id'] ?? 0) !== $id
+                || (int) ($selected['product_id'] ?? 0) !== $product_id
+                || !hash_equals($token, (string) ($selected['agas_design_token'] ?? ''))) {
+                wp_die('The cart item to replace is no longer available. Return to the cart and try again.', '', array('response' => 409));
+            }
+            $existing_key = $source_cart_key;
+        } else {
+            foreach ($cart_contents as $item_key => $cart_item) {
+                if ((int) ($cart_item['agas_design_id'] ?? 0) === $id
+                    && (int) ($cart_item['product_id'] ?? 0) === $product_id) {
+                    $existing_key = $item_key;
+                    break;
+                }
             }
         }
-        if ($existing_key) {
+        $decision = self::cart_choice_action($cart_mode, $existing_key !== '');
+        if (is_wp_error($decision)) {
+            wp_die($decision->get_error_message(), '', array('response' => 409));
+        }
+        if ($decision === 'replace') {
             WC()->cart->cart_contents[$existing_key]['agas_options'] = $opts;
             WC()->cart->cart_contents[$existing_key]['agas_design_token'] = $token;
             $key = $existing_key;
@@ -669,7 +725,7 @@ public static function upgrade_logo_slots() {
     private static function cart_design_actions_markup() {
         if (!function_exists('WC') || !WC()->cart) return '';
         $rows = array();
-        foreach (WC()->cart->get_cart() as $item) {
+        foreach (WC()->cart->get_cart() as $cart_key => $item) {
             $id = absint($item['agas_design_id'] ?? 0);
             $product_id = absint($item['product_id'] ?? 0);
             if (!$id || !$product_id || get_post_type($id) !== 'agas_design') continue;
@@ -683,6 +739,7 @@ public static function upgrade_logo_slots() {
                 'agas_design' => $id,
                 'agas_token' => $canonical,
                 'agas_from_cart' => 1,
+                'agas_cart_key' => $cart_key,
             ));
             $options = self::cart_design_options($item);
             $details = $options && !is_wp_error($options)

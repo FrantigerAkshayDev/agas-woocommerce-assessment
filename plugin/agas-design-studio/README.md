@@ -87,3 +87,11 @@ Run `docker compose exec -T wordpress php /var/www/html/wp-content/plugins/agas-
 The design editor now offers **Edit selected text**, a list of text layers, and an **Edit on canvas** action (Enter also enters inline editing when a text object is selected). These controls make text editing possible without guessing the double-click gesture. The cart page displays an **Edit your designs** panel with one edit link per customized line. Each link includes the existing saved design token and returns to the editor. **Back to cart** is offered on the editor, and **Continue to Cart** resaves the same design so WooCommerce updates its existing line rather than duplicating it. The product name continues to link to the regular product page.
 
 The modern WooCommerce Cart block does not expose a supported per-item action slot; the separate cart panel is intentional. The older classic cart template uses its standard `woocommerce_before_cart` hook. See `README-UPDATE-v0.1.9.md` for acceptance tests.
+
+### v0.1.10 - Replace an existing cart design or add another version
+
+When editing an item from **Cart > Edit design**, the customer is now asked whether to **Replace existing cart item** or **Add as a separate cart item**. The choice also appears on **Save** to prevent an accidental overwrite before Continue. Replacing updates only the selected cart line. Adding separately creates a new private saved-design record and unique access token, so changes to the new item do not alter the original artwork, options or price. **Cancel** leaves the editor untouched. Fresh templates opened from the gallery still follow the ordinary add-to-cart flow without a prompt.
+
+A saved separate copy can be edited further; Continue adds that new design to the cart. Cart link URLs include a cart-line key that the server verifies for replacements. The server rejects invalid action modes, missing replacement targets and attempts to use the same saved-design record as an independent cart line. See `README-UPDATE-v0.1.10.md` for the browser acceptance checklist.
+
+Mock tests: `php tools/test_cart_regression.php`, `php tools/test_cart_choice.php`, and `node tools/test_cart_choice_js.cjs`. These do **not** replace browser testing on the local WooCommerce store.

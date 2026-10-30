@@ -19,6 +19,9 @@
     enableRetinaScaling: true
   });
   var savedDesign = cfg.loadedDesign || null;
+  var originalCartDesign = cfg.returnToCart && cfg.loadedDesign
+    ? {id: cfg.loadedDesign.id, token: cfg.loadedDesign.token, cartKey: cfg.cartEditKey || ''}
+    : null;
   var template = cfg.template || null;
   var sides = {front: null, back: null};
   var currentSide = 'front';
@@ -758,7 +761,7 @@ dropArea.addEventListener('drop', function (ev) {
   });
 
   function shortcuts(e) {
-    if (cfg.readonly) return;
+    if (cfg.readonly || !$('agas-cart-choice').hidden) return;
     var node = document.activeElement;
     var isTyping = node && (['INPUT','TEXTAREA','SELECT'].includes(node.tagName) || node.isContentEditable || (active() && active().isEditing));
     if (isTyping) return;
@@ -829,39 +832,105 @@ dropArea.addEventListener('drop', function (ev) {
     dirty = false;
     return result;
   }
-  async function saveDesign() {
+  /** Ask before writing to an existing cart design: Save is not a silent overwrite. */
+  function chooseCartMode(thenCart) {
+    if (!originalCartDesign) return Promise.resolve('auto');
+    var overlay = $('agas-cart-choice');
+    if (!overlay) return Promise.reject(new Error('Cart choice dialog unavailable.'));
+    var replace = $('agas-choice-replace');
+    var add = $('agas-choice-add');
+    var cancel = $('agas-choice-cancel');
+    var previousFocus = document.activeElement;
+    var help = $('agas-cart-choice-help');
+    help.textContent = thenCart
+      ? 'Choose what happens when this edited design goes into your cart.'
+      : 'Choose where to save your changes. A separate copy keeps the original cart design untouched.';
+    replace.querySelector('strong').textContent = thenCart ? 'Replace existing cart item' : 'Save changes to existing design';
+    add.querySelector('strong').textContent = thenCart ? 'Add as a separate cart item' : 'Save as a separate design';
+    overlay.hidden = false;
+    replace.focus();
+    return new Promise(function (resolve) {
+      function finish(value) {
+        replace.removeEventListener('click', onReplace);
+        add.removeEventListener('click', onAdd);
+        cancel.removeEventListener('click', onCancel);
+        overlay.removeEventListener('click', onBackdrop);
+        document.removeEventListener('keydown', onKeyDown, true);
+        overlay.hidden = true;
+        if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
+        resolve(value);
+      }
+      function onReplace() {finish('replace');}
+      function onAdd() {finish('add');}
+      function onCancel() {finish(null);}
+      function onBackdrop(e) {if (e.target === overlay) finish(null);}
+      function onKeyDown(e) {
+        if (e.key === 'Escape') {e.preventDefault();e.stopPropagation();finish(null);}
+        if (e.key === 'Tab') {
+          var controls = [replace, add, cancel];
+          var index = controls.indexOf(document.activeElement);
+          if (e.shiftKey && index === 0) {e.preventDefault();cancel.focus();}
+          else if (!e.shiftKey && index === 2) {e.preventDefault();replace.focus();}
+        }
+      }
+      replace.addEventListener('click', onReplace);
+      add.addEventListener('click', onAdd);
+      cancel.addEventListener('click', onCancel);
+      overlay.addEventListener('click', onBackdrop);
+      document.addEventListener('keydown', onKeyDown, true);
+    });
+  }
+  async function saveDesign(cartMode) {
     var json = await serializeAll();
-    var payload = {product_id:cfg.productId,template_id:(template ? template.id : 0),front:json.front,back:json.back,options:getOptions(),preview:json.preview,design_id:savedDesign ? savedDesign.id : 0,token:savedDesign ? savedDesign.token : ''};
+    // Cloning creates a truly separate saved-design record and access token.
+    // Editing an existing item uses its original ID ONLY after explicit choice.
+    var target = cartMode === 'replace' && originalCartDesign
+      ? originalCartDesign : (cartMode === 'add' && originalCartDesign ? null : savedDesign);
+    var payload = {product_id:cfg.productId,template_id:(template ? template.id : 0),front:json.front,back:json.back,options:getOptions(),preview:json.preview,design_id:target ? target.id : 0,token:target ? target.token : ''};
     var result = await postJson('designs', payload);
-    if (cfg.returnToCart && result.edit_url) {
+    if (cartMode === 'replace' && originalCartDesign && result.edit_url) {
       var editLink = new URL(result.edit_url, window.location.href);
       editLink.searchParams.set('agas_from_cart', '1');
+      if (originalCartDesign.cartKey) editLink.searchParams.set('agas_cart_key', originalCartDesign.cartKey);
       result.edit_url = editLink.toString();
     }
     savedDesign = {id:result.id,token:result.token};
+    if (cartMode === 'add' && originalCartDesign) {
+      // Subsequent saves update the new copy; original cart item remains intact.
+      originalCartDesign = null;
+      cfg.returnToCart = false;
+    }
     dirty = false;
-    message('Design saved as #' + result.id + '. Shareable editing link: ' + result.edit_url);
+    message(cartMode === 'add' ? 'Separate design #' + result.id + ' saved. Your original cart item is unchanged.' :
+      (cartMode === 'replace' ? 'Existing design #' + result.id + ' updated.' : 'Design saved as #' + result.id + '.') +
+      ' Editing link: ' + result.edit_url);
     window.history.replaceState({}, '', result.edit_url);
     return result;
   }
   async function save(thenCart) {
     var button = $('agas-continue');
+    var saveButton = $('agas-save');
     button.disabled = true;
+    saveButton.disabled = true;
     try {
       if (cfg.editingTemplate) {
         await saveTemplate();
       } else {
-        var result = await saveDesign();
+        var source = originalCartDesign;
+        var mode = await chooseCartMode(thenCart);
+        if (mode === null) return;
+        var result = await saveDesign(mode);
         if (thenCart) {
           var form = document.createElement('form');form.method = 'POST';form.action = cfg.cartEndpoint;
-          var data = {action:'agas_design_add_cart',_wpnonce:cfg.cartNonce,design_id:result.id,token:result.token};
+          var data = {action:'agas_design_add_cart',_wpnonce:cfg.cartNonce,design_id:result.id,token:result.token,
+            cart_mode:source ? mode : 'auto',source_design_id:source ? source.id : 0,source_cart_key:source ? source.cartKey : ''};
           Object.keys(data).forEach(function (key) {var field = document.createElement('input');field.type = 'hidden';field.name = key;field.value = data[key];form.appendChild(field);});
           document.body.appendChild(form);
           form.submit();
         }
       }
     } catch (e) {message(e.message, true);}
-    finally {button.disabled = false;}
+    finally {button.disabled = false; saveButton.disabled = false;}
   }
   $('agas-save').addEventListener('click', function () {save(false);});
   $('agas-continue').addEventListener('click', function () {save(true);});

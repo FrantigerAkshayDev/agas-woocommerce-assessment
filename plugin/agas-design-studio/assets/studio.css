@@ -213,3 +213,17 @@ body.admin-bar.agas-ds-app-page .agas-standalone-shell{height:calc(100dvh - 32px
 .agas-cart-edit-link{display:inline-block;flex-shrink:0;text-decoration:none!important;padding:10px 14px;border-radius:7px;background:#2157cd;color:#fff!important;font-size:13px;font-weight:700;line-height:1.1}
 .agas-cart-edit-link:hover,.agas-cart-edit-link:focus{background:#1745ac;color:#fff!important}
 @media(max-width:600px){.agas-cart-edit-row{align-items:flex-start;flex-direction:column;gap:8px}.agas-cart-edit-panel{padding:14px}}
+
+/* v0.1.10: explicit, accessible replace-vs-add dialog for cart design edits. */
+.agas-cart-choice-overlay[hidden]{display:none!important}
+.agas-cart-choice-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(13,32,53,.72)}
+.agas-cart-choice-dialog{box-sizing:border-box;width:min(100%,510px);max-height:calc(100vh - 36px);overflow-y:auto;background:#fff;color:#183450;border-radius:16px;padding:26px;box-shadow:0 24px 80px rgba(4,21,37,.45)}
+.agas-cart-choice-dialog h2{margin:0 0 10px!important;font:700 22px/1.25 system-ui,sans-serif;color:#102e4c}
+.agas-cart-choice-dialog p{font:14px/1.5 system-ui,sans-serif;color:#52677c;margin:0 0 18px}
+.agas-cart-choice-options{display:grid;gap:11px}
+.agas-designer button.agas-cart-choice-option{box-sizing:border-box;display:flex;flex-direction:column;align-items:flex-start;gap:7px;width:100%;padding:15px;text-align:left;white-space:normal;border:1px solid #aac4e5;border-radius:10px;background:#f4f9ff;color:#133c67}
+.agas-designer button.agas-cart-choice-option:hover,.agas-designer button.agas-cart-choice-option:focus-visible{background:#e7f1ff;border-color:#2167df;outline-offset:2px}
+.agas-cart-choice-option strong{font:700 15px/1.2 system-ui,sans-serif}
+.agas-cart-choice-option span{font:13px/1.45 system-ui,sans-serif;color:#506984}
+.agas-designer button.agas-choice-cancel{display:block;margin:15px auto 0;padding:9px 12px;border:0;background:transparent;color:#48647f;text-decoration:underline;font-weight:600}
+@media(max-width:620px){.agas-cart-choice-dialog{padding:19px}.agas-cart-choice-dialog h2{font-size:19px}}
