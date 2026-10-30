@@ -1,0 +1,7 @@
+.env
+.DS_Store
+node_modules/
+vendor/
+*.log
+
+plugin/agas-design-studio.backup.*/

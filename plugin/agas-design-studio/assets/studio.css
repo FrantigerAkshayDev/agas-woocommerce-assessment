@@ -1,0 +1,193 @@
+.agas-gallery,.agas-designer{--agas-navy:#11283f;--agas-dark:#071927;--agas-cyan:#12b4a5;--agas-blue:#1d4ed8;--agas-muted:#64748b;--agas-border:#dce5ed;--agas-pale:#f4f8fb;color:var(--agas-navy);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}
+.agas-gallery *,.agas-designer *{box-sizing:border-box}
+.agas-gallery{max-width:1300px;margin:0 auto 56px;padding:30px 20px}
+.agas-gallery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:32px}
+.agas-gallery h1{font-size:clamp(30px,3vw,42px);font-weight:800;color:var(--agas-navy);margin:7px 0 12px;letter-spacing:-.04em}
+.agas-gallery p{color:#526377;margin:0}
+.agas-eyebrow{font-size:11px;font-weight:800;letter-spacing:.18em;color:#129a8e}
+.agas-action,.agas-card-button,.agas-designer .agas-primary{background:var(--agas-blue);color:#fff!important;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none!important;font-weight:700;border:0;cursor:pointer;padding:13px 20px;white-space:nowrap}
+.agas-action:hover,.agas-card-button:hover,.agas-designer .agas-primary:hover{background:#1e40af;color:white}
+.agas-gallery-controls{display:grid;grid-template-columns:1fr 1fr 1.7fr;gap:16px;margin-bottom:22px}
+.agas-gallery label,.agas-designer label{font-size:12px;font-weight:700;color:#46586e;display:flex;flex-direction:column;gap:7px}
+.agas-gallery input,.agas-gallery select,.agas-designer input:not([type=checkbox]):not([type=color]):not([type=range]):not([type=file]),.agas-designer select{border:1px solid var(--agas-border);border-radius:7px;background:#fff;color:#1e293b;padding:10px 12px;min-height:40px;box-shadow:none;outline-offset:2px;width:100%}
+.agas-gallery input:focus,.agas-gallery select:focus,.agas-designer input:focus,.agas-designer select:focus{border-color:#4c84ef}
+.agas-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.agas-template-card{background:#fff;border:1px solid #d9e2ec;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(12,30,50,.04);transition:transform .18s,box-shadow .18s}
+.agas-template-card:hover{transform:translateY(-3px);box-shadow:0 9px 24px rgba(12,30,50,.12)}
+.agas-template-card[hidden]{display:none}
+.agas-card-image{height:195px;overflow:hidden;background:#eef3f7}
+.agas-card-image img{width:100%;height:100%;object-fit:cover}
+.agas-card-generated{display:flex;align-items:center;justify-content:center;padding:21px;color:#fff}
+.agas-card-frame{border:5px solid #ffffff88;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:12px;text-align:center;gap:10px}
+.agas-card-frame strong{font-size:clamp(16px,1.8vw,25px);font-weight:850;line-height:1.1;letter-spacing:-.03em}
+.agas-card-frame span{font-size:10px;letter-spacing:.15em}
+.agas-card-foot{display:flex;align-items:center;justify-content:space-between;padding:15px;gap:10px}
+.agas-card-foot strong{display:block;font-size:14px;color:var(--agas-navy)}
+.agas-card-foot small{display:block;font-size:11px;color:#718096;margin-top:4px}
+.agas-card-button{font-size:12px;padding:10px 12px}
+.agas-product-cta{margin:20px 0}.agas-product-cta .button{background:#1764df!important;color:#fff!important}
+.agas-designer{max-width:1540px;margin:14px auto 34px;background:var(--agas-pale);border:1px solid var(--agas-border);border-radius:13px;overflow:hidden;box-shadow:0 8px 35px #172d4c15}
+.agas-designer button{cursor:pointer;border:1px solid #d5e0eb;border-radius:7px;background:#fff;color:#1a3554;font-size:12px;font-weight:700;padding:9px 12px;min-height:34px;white-space:nowrap;line-height:1.2}
+.agas-designer button:hover:not(:disabled){background:#eaf3fc;border-color:#9bbde9}
+.agas-designer button:disabled{opacity:.45;cursor:not-allowed}
+.agas-topbar{background:#fff;min-height:70px;padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid var(--agas-border)}
+.agas-topbar strong{font-size:15px}
+.agas-logo{font-size:19px;font-weight:900;letter-spacing:-.055em;color:#1a405e;text-decoration:none!important;white-space:nowrap}
+.agas-logo span{font-size:11px;letter-spacing:.08em;font-weight:800;color:#13a699;vertical-align:middle;margin-left:4px}
+.agas-top-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.agas-top-actions a{display:inline-flex;align-items:center;padding:9px 7px;text-decoration:none;font-size:12px;color:#214e78}
+.agas-main{display:grid;grid-template-columns:195px minmax(300px,1fr) 220px;min-height:610px}
+.agas-tools,.agas-config{background:#fff;padding:20px 14px;border-right:1px solid var(--agas-border)}
+.agas-config{border-right:0;border-left:1px solid var(--agas-border)}
+.agas-designer h3{font-size:15px;font-weight:800;margin:0 0 22px;color:#1a334b}
+.agas-panel-section{border-bottom:1px solid #e7edf3;padding:0 0 18px;margin:0 0 18px}
+.agas-panel-section label{margin-bottom:10px}
+.agas-panel-section button{display:block;width:100%;margin:6px 0;text-align:left}
+.agas-designer input[type=color]{width:100%;height:38px;padding:3px;border:1px solid var(--agas-border);border-radius:7px;background:#fff}
+.agas-designer input[type=file]{display:block;width:100%;font-size:11px}
+.agas-hint{font-size:11px;color:#79889b;line-height:1.65;margin-top:18px}
+.agas-shape-buttons{display:flex;flex-direction:column}
+.agas-workspace{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.agas-object-toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--agas-border);min-height:66px;flex-wrap:wrap}
+.agas-object-toolbar label{flex-direction:row;align-items:center;gap:4px}
+.agas-object-toolbar select{width:112px}.agas-object-toolbar input[type=number]{width:65px!important}.agas-object-toolbar input[type=color]{width:38px;height:36px}
+.agas-canvas-area{padding:25px 16px;display:flex;align-items:center;flex-direction:column;justify-content:center;flex:1;overflow:auto;min-height:520px}
+.agas-ruler{font-size:11px;color:#677c90;letter-spacing:.04em;margin-bottom:10px}
+.agas-canvas-shell{position:relative;display:inline-block;box-shadow:0 12px 35px rgba(18,36,56,.15);background:#fff;transform-origin:top center}
+.agas-canvas-shell .canvas-container{border:1px solid #bdcad8}
+.agas-canvas-shell canvas{display:block}
+.agas-safety{pointer-events:none;position:absolute;inset:20px;border:2px dashed rgba(239,68,68,.5)}
+.agas-hide-guides .agas-safety,.agas-preview .agas-safety{display:none}
+#agas-status{font-size:11px;color:#6b7f93;margin:18px 0 0;max-width:900px;overflow-wrap:anywhere}
+#agas-status.agas-error{color:#b91c1c;font-weight:700}
+.agas-config label{margin-bottom:16px}
+.agas-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.agas-designer label.agas-check{display:flex;align-items:center;flex-direction:row;gap:8px;font-weight:600;font-size:12px;margin:15px 0}
+.agas-designer input[type=checkbox]{width:16px;height:16px;margin:0}
+.agas-side-switch{display:flex;gap:6px}
+.agas-side-switch button{flex:1}
+.agas-side-switch button.active{background:#d9f7f2;border-color:#13ab9c}
+.agas-bottombar{display:flex;align-items:center;justify-content:space-between;gap:20px;background:#fff;padding:15px 20px;border-top:1px solid var(--agas-border);flex-wrap:wrap}
+.agas-bottombar label{display:flex;align-items:center;gap:10px;flex-direction:row}
+.agas-bottombar input[type=range]{width:110px;accent-color:#1e64d8}
+.agas-bottombar a{font-size:12px;text-decoration:underline;color:#45678a}
+.agas-price{font-size:12px;color:#6d8194;white-space:nowrap}
+.agas-price strong{font-size:22px;font-weight:850;color:#132f49;margin-left:10px}
+.agas-designer .agas-primary{background:#1265de;color:#fff;border:0;font-size:13px;padding:14px 22px}
+.agas-preview .agas-tools,.agas-preview .agas-config,.agas-preview .agas-object-toolbar,.agas-preview .agas-bottombar{display:none}
+.agas-preview .agas-main{display:block}
+.agas-preview .agas-canvas-area{min-height:75vh;background:#e9eff5}
+.agas-my-designs{margin-top:30px;padding:18px;border:1px solid #dbe2ec;border-radius:10px}
+@media(max-width:1200px){.agas-main{grid-template-columns:170px minmax(300px,1fr) 190px}.agas-topbar{flex-wrap:wrap}.agas-designer .agas-canvas-area{justify-content:flex-start;align-items:flex-start}}
+@media(max-width:850px){.agas-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.agas-gallery-header{align-items:flex-start;flex-direction:column}.agas-gallery-controls{grid-template-columns:1fr 1fr}.agas-main{grid-template-columns:1fr}.agas-tools,.agas-config{border:0;border-bottom:1px solid var(--agas-border)}.agas-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.agas-tools h3,.agas-tools .agas-hint{grid-column:1 / -1}.agas-panel-section{margin:0}.agas-config{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px}.agas-config h3,.agas-config .agas-hint{grid-column:1 / -1}.agas-config label{margin:0}.agas-canvas-area{min-height:500px}.agas-bottombar{justify-content:flex-start}}
+@media(max-width:550px){.agas-gallery-grid,.agas-gallery-controls{grid-template-columns:1fr}.agas-gallery{padding:18px 13px}.agas-topbar{padding:14px}.agas-topbar strong{width:100%;order:2}.agas-top-actions{order:3}.agas-tools{grid-template-columns:1fr 1fr}.agas-config{grid-template-columns:1fr 1fr}.agas-object-toolbar{max-height:120px;overflow:auto}.agas-bottombar{gap:12px}.agas-price strong{font-size:19px}.agas-card-image{height:195px}}
+
+
+/* ======================= AGAS STANDALONE APP v0.1.1 ======================= */
+:root{--agas-ui-font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}
+body.agas-ds-app-page,body.agas-ds-gallery-page{margin:0;background:#eff4f8;color:#142e48;font-family:var(--agas-ui-font)}
+body.agas-ds-app-page{overflow:hidden}
+body.agas-ds-app-page #wpadminbar,body.agas-ds-gallery-page #wpadminbar{z-index:100000}
+body.agas-ds-app-page .agas-standalone-shell{height:100dvh;width:100%;overflow:hidden;min-height:0}
+body.admin-bar.agas-ds-app-page .agas-standalone-shell{height:calc(100dvh - 32px)}
+.agas-standalone-shell .agas-designer{height:100%;max-width:none;width:100%;margin:0;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;overflow:hidden}
+.agas-standalone-shell .agas-main{flex:1;min-height:0;display:grid;grid-template-columns:228px minmax(0,1fr) 246px;overflow:hidden}
+.agas-standalone-shell .agas-tools,.agas-standalone-shell .agas-config{min-width:0;min-height:0;overflow:auto;padding:20px 16px;background:#fff}
+.agas-standalone-shell .agas-workspace{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.agas-standalone-shell .agas-topbar{flex:0 0 auto;min-height:68px;padding:10px 24px;box-shadow:0 2px 9px #11263a0b;gap:18px;z-index:2}
+.agas-standalone-shell .agas-topbar .agas-logo{font-size:21px}
+.agas-standalone-shell .agas-topbar #agas-product-name{font-size:13px;background:#eaf3fc;color:#1b4a75;padding:8px 12px;border-radius:8px}
+.agas-standalone-shell .agas-object-toolbar{flex:0 0 auto;min-height:64px;padding:10px 16px;gap:8px}
+.agas-standalone-shell .agas-canvas-area{flex:1;min-height:0;min-width:0;overflow:auto;padding:18px 20px 16px;justify-content:flex-start;align-items:center;background:radial-gradient(circle at center,#f9fbfd 0,#e7eef5 100%)}
+.agas-standalone-shell .agas-canvas-viewport{position:relative;flex:none;margin:auto;max-width:none;overflow:visible}
+.agas-standalone-shell .agas-canvas-shell{position:absolute;top:0;left:0;transform-origin:top left;margin:0}
+.agas-standalone-shell .agas-ruler{margin:0 0 9px;flex:none;font-size:12px;min-height:16px}
+.agas-standalone-shell #agas-status{margin:12px 0 0;min-height:18px;max-width:min(90%,900px);text-align:center;flex:none}
+.agas-standalone-shell .agas-bottombar{flex:0 0 auto;min-height:76px;padding:12px 24px;gap:16px;box-shadow:0 -2px 9px #11263a0b;z-index:2}
+.agas-standalone-shell .agas-price{margin-left:auto}
+.agas-standalone-shell .agas-primary{min-height:46px;font-size:14px}
+.agas-standalone-shell .agas-designer button{transition:background .15s,border-color .15s}
+.agas-standalone-shell .agas-designer h3{margin:0 0 15px}
+.agas-standalone-shell .agas-designer label{min-width:0}
+.agas-standalone-shell .agas-designer .agas-object-toolbar label{white-space:nowrap}
+.agas-standalone-shell .agas-tools::-webkit-scrollbar,.agas-standalone-shell .agas-config::-webkit-scrollbar{width:7px}
+.agas-standalone-shell .agas-tools::-webkit-scrollbar-thumb,.agas-standalone-shell .agas-config::-webkit-scrollbar-thumb{background:#d0dbe6;border-radius:8px}
+.agas-standalone-shell .agas-canvas-shell .canvas-container{box-shadow:0 14px 40px #142f4930}
+.agas-standalone-shell .agas-preview .agas-main{display:block;overflow:auto}
+.agas-standalone-shell .agas-preview .agas-canvas-area{min-height:calc(100dvh - 150px);width:100%;overflow:auto}
+.agas-standalone-shell .agas-preview .agas-topbar{position:relative;z-index:10}
+.agas-standalone-shell .agas-preview .agas-tools,.agas-standalone-shell .agas-preview .agas-config{display:none}
+/* Gallery has its own page too; no duplicate WP page title or theme footer. */
+.agas-gallery-page-shell{min-height:100dvh;width:100%;background:#f7fafc}
+.agas-site-header{height:72px;background:#fff;border-bottom:1px solid #dde6ef;display:flex;justify-content:space-between;align-items:center;padding:0 clamp(20px,5vw,80px);gap:20px}
+.agas-site-mark{text-decoration:none!important;font-size:23px;font-weight:900;letter-spacing:-.05em;color:#193a59!important}
+.agas-site-mark span{font-size:11px;color:#10a59b;letter-spacing:.1em;font-weight:850}
+.agas-site-header nav{display:flex;gap:26px;align-items:center}
+.agas-site-header nav a{font-size:14px;font-weight:600;text-decoration:none;color:#264865}
+.agas-site-header nav a[aria-current]{color:#1666de}
+.agas-gallery-page-shell .agas-gallery{max-width:1320px;margin:0 auto;padding:46px 25px 90px}
+.agas-gallery-page-shell .agas-gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.agas-gallery-page-shell .agas-card-image{height:245px}
+.agas-gallery-page-shell .agas-gallery-header{margin-bottom:36px}
+@media(max-width:1100px){
+ .agas-standalone-shell .agas-main{grid-template-columns:194px minmax(0,1fr) 210px}
+ .agas-standalone-shell .agas-tools,.agas-standalone-shell .agas-config{padding:16px 12px}
+ .agas-standalone-shell .agas-topbar{padding:10px 16px}
+ .agas-standalone-shell .agas-bottombar{padding:10px 16px}
+ .agas-gallery-page-shell .agas-card-image{height:210px}
+}
+@media(max-width:950px){
+ body.agas-ds-app-page{overflow:auto}
+ body.agas-ds-app-page .agas-standalone-shell,body.admin-bar.agas-ds-app-page .agas-standalone-shell{height:auto;min-height:100dvh;overflow:visible}
+ .agas-standalone-shell .agas-designer{height:auto;min-height:100dvh;overflow:visible}
+ .agas-standalone-shell .agas-main{display:flex;flex-direction:column;overflow:visible;min-height:0}
+ .agas-standalone-shell .agas-workspace{order:0;min-height:420px;overflow:visible}
+ .agas-standalone-shell .agas-tools{order:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;overflow:visible;border-top:1px solid #dde6ef}
+ .agas-standalone-shell .agas-tools h3,.agas-standalone-shell .agas-tools .agas-hint{grid-column:1/-1}
+ .agas-standalone-shell .agas-config{order:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;overflow:visible}
+ .agas-standalone-shell .agas-config h3,.agas-standalone-shell .agas-config .agas-hint{grid-column:1/-1}
+ .agas-standalone-shell .agas-canvas-area{min-height:400px;max-height:65vh}
+ .agas-standalone-shell .agas-object-toolbar{min-height:60px;max-height:none;overflow-x:auto;flex-wrap:nowrap}
+ .agas-standalone-shell .agas-topbar{flex-wrap:wrap}
+ .agas-standalone-shell .agas-bottombar{position:sticky;bottom:0;z-index:10}
+}
+@media(max-width:620px){
+ .agas-standalone-shell .agas-topbar{gap:8px}
+ .agas-standalone-shell .agas-topbar .agas-logo{font-size:17px}
+ .agas-standalone-shell .agas-topbar .agas-logo span{font-size:8px}
+ .agas-standalone-shell .agas-topbar #agas-product-name{font-size:11px}
+ .agas-standalone-shell .agas-top-actions{gap:5px}
+ .agas-standalone-shell .agas-top-actions button{padding:8px 9px}
+ .agas-standalone-shell .agas-tools,.agas-standalone-shell .agas-config{grid-template-columns:1fr 1fr;gap:10px}
+ .agas-standalone-shell .agas-canvas-area{padding:12px;min-height:300px;max-height:55vh}
+ .agas-standalone-shell .agas-bottombar{gap:8px}
+ .agas-standalone-shell .agas-price strong{font-size:18px}
+ .agas-gallery-page-shell .agas-gallery-grid{grid-template-columns:1fr}
+ .agas-gallery-page-shell .agas-gallery{padding:24px 16px 60px}
+ .agas-gallery-page-shell .agas-card-image{height:220px}
+ .agas-site-header{padding:0 16px}
+ .agas-site-header nav{gap:12px}
+ .agas-site-mark{font-size:18px}
+ .agas-site-mark span{font-size:8px}
+}
+@media(max-width:782px){body.admin-bar.agas-ds-app-page .agas-standalone-shell{height:auto}}
+
+/* AGAS v0.1.4 — object editing commands */
+.agas-command-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.agas-tools .agas-command-grid button{width:100%;min-width:0;text-align:center;font-size:11px;margin:0;padding:8px 5px;white-space:normal}
+.agas-opacity-control{margin-top:13px;display:flex;flex-direction:column;gap:6px}
+.agas-opacity-control input[type=range]{width:100%;accent-color:#1d4ed8}
+.agas-shortcut-tip{font-size:10px;line-height:1.55;color:#667b92;margin:12px 0 0}
+.agas-standalone-shell .agas-object-toolbar{overflow-x:auto;scrollbar-width:thin}
+.agas-standalone-shell .agas-object-toolbar button{font-size:11px;padding:8px 10px}
+@media(max-width:950px){.agas-standalone-shell .agas-tools .agas-object-actions{grid-column:1/-1}}
+
+.agas-standalone-shell .agas-design-context{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;flex-wrap:wrap}
+.agas-standalone-shell .agas-template-name{font-size:11px;color:#64748b;font-weight:700;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:620px){.agas-standalone-shell .agas-template-name{max-width:150px}}
+
+/* v0.1.5: clickable image/logo placeholders */
+.agas-logo-upload-actions button{white-space:normal;text-align:center;background:#ecfdf5;border-color:#0eaaa0;color:#075b59}
+.agas-logo-upload-actions button:disabled{background:#f3f6f9;border-color:#dde6ed;color:#8696a5}
+.agas-logo-upload-actions .agas-hint{margin:8px 0 14px}
+.agas-standalone-shell .agas-logo-upload-actions{grid-column:1/-1}

@@ -1,0 +1,98 @@
+{
+  "outdoor vinyl banner": [
+    {
+      "key": "banner-grand-opening",
+      "name": "Grand Opening",
+      "category": "Events"
+    },
+    {
+      "key": "banner-flash-sale",
+      "name": "Flash Sale",
+      "category": "Sale"
+    },
+    {
+      "key": "banner-music-festival",
+      "name": "Music Festival",
+      "category": "Events"
+    },
+    {
+      "key": "banner-now-hiring",
+      "name": "Now Hiring",
+      "category": "Business"
+    },
+    {
+      "key": "banner-coming-soon",
+      "name": "Coming Soon",
+      "category": "Business"
+    },
+    {
+      "key": "banner-fundraiser",
+      "name": "Community Fundraiser",
+      "category": "Community"
+    }
+  ],
+  "custom flag": [
+    {
+      "key": "flag-france",
+      "name": "France Flag",
+      "category": "Country Flags"
+    },
+    {
+      "key": "flag-japan",
+      "name": "Japan Flag",
+      "category": "Country Flags"
+    },
+    {
+      "key": "flag-italy",
+      "name": "Italy Flag",
+      "category": "Country Flags"
+    },
+    {
+      "key": "flag-ukraine",
+      "name": "Ukraine Flag",
+      "category": "Country Flags"
+    },
+    {
+      "key": "flag-company",
+      "name": "Company Brand Flag",
+      "category": "Business"
+    },
+    {
+      "key": "flag-event",
+      "name": "Event Flag",
+      "category": "Events"
+    }
+  ],
+  "yard sign": [
+    {
+      "key": "sign-open-house",
+      "name": "Open House",
+      "category": "Real Estate"
+    },
+    {
+      "key": "sign-for-sale",
+      "name": "For Sale",
+      "category": "Real Estate"
+    },
+    {
+      "key": "sign-sold",
+      "name": "Sold",
+      "category": "Real Estate"
+    },
+    {
+      "key": "sign-welcome-home",
+      "name": "Welcome Home",
+      "category": "Real Estate"
+    },
+    {
+      "key": "sign-reserved",
+      "name": "Reserved Parking",
+      "category": "Directions"
+    },
+    {
+      "key": "sign-entrance",
+      "name": "Event Entrance",
+      "category": "Events"
+    }
+  ]
+}
