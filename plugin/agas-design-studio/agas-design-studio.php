@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AGAS Design Studio
  * Description: Custom WooCommerce template gallery, online canvas designer, and order integration.
- * Version: 0.1.6
+ * Version: 0.1.9
  * Requires Plugins: woocommerce
  * Text Domain: agas-design-studio
  */
@@ -10,7 +10,7 @@
 defined('ABSPATH') || exit;
 
 final class AGAS_Design_Studio {
-    const VERSION = '0.1.7';
+    const VERSION = '0.1.9';
     const REST_NS = 'agas-design/v1';
 
     public static function boot() {
@@ -23,10 +23,14 @@ final class AGAS_Design_Studio {
         add_shortcode('agas_designer', array(__CLASS__, 'designer_shortcode'));
         add_action('woocommerce_single_product_summary', array(__CLASS__, 'product_cta'), 35);
         add_action('rest_api_init', array(__CLASS__, 'register_routes'));
+        add_action('template_redirect', array(__CLASS__, 'maybe_frontend_add_to_cart'), 1);
         add_action('admin_post_agas_design_add_cart', array(__CLASS__, 'add_to_cart'));
         add_action('admin_post_nopriv_agas_design_add_cart', array(__CLASS__, 'add_to_cart'));
+        add_filter('woocommerce_get_cart_item_from_session', array(__CLASS__, 'sync_session_cart_item'), 20, 3);
         add_action('woocommerce_before_calculate_totals', array(__CLASS__, 'apply_cart_prices'), 20);
         add_filter('woocommerce_get_item_data', array(__CLASS__, 'cart_item_details'), 10, 2);
+        add_filter('the_content', array(__CLASS__, 'cart_design_actions_content'), 11);
+        add_action('woocommerce_before_cart', array(__CLASS__, 'classic_cart_design_actions'), 8);
         add_filter('woocommerce_cart_item_thumbnail', array(__CLASS__, 'cart_thumbnail'), 10, 3);
         add_filter('woocommerce_store_api_cart_item_images', array(__CLASS__, 'cart_block_images'), 10, 3);
         add_action('woocommerce_order_item_meta_end', array(__CLASS__, 'order_item_preview'), 10, 4);
@@ -277,6 +281,9 @@ public static function upgrade_logo_slots() {
         $editor_id = absint(get_option('agas_ds_editor_page'));
         if ($editor_id && is_page($editor_id)) self::enqueue_assets(true);
         elseif ($gallery_id && is_page($gallery_id)) self::enqueue_assets(false);
+        elseif (function_exists('is_cart') && is_cart()) {
+            wp_enqueue_style('agas-design-studio', plugins_url('assets/studio.css', __FILE__), array(), self::VERSION);
+        }
     }
 
     private static function enqueue_assets($include_editor = false) {
@@ -376,7 +383,7 @@ public static function upgrade_logo_slots() {
         $config = array(
             'rest' => esc_url_raw(rest_url(self::REST_NS . '/')),
             'nonce' => wp_create_nonce('wp_rest'),
-            'cartEndpoint' => esc_url_raw(admin_url('admin-post.php')),
+            'cartEndpoint' => esc_url_raw(add_query_arg('agas_design_add_to_cart', '1', home_url('/'))),
             'cartNonce' => wp_create_nonce('agas_design_cart'),
             'productId' => $product_id,
             'productName' => $products[$product_id],
@@ -388,6 +395,7 @@ public static function upgrade_logo_slots() {
             'products' => $products,
             'saveTemplateAllowed' => current_user_can('manage_woocommerce'),
             'readonly' => !empty($_GET['agas_readonly']),
+            'returnToCart' => !empty($_GET['agas_from_cart']),
         );
         wp_add_inline_script('agas-studio', 'window.AGAS_DS = ' . wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ';', 'before');
         ob_start();
@@ -396,10 +404,21 @@ public static function upgrade_logo_slots() {
           <header class="agas-topbar">
             <a class="agas-logo" href="<?php echo esc_url(self::gallery_url($product_id)); ?>">AGAS<span> DESIGN STUDIO</span></a>
             <div class="agas-design-context"><strong id="agas-product-name"><?php echo esc_html($products[$product_id]); ?></strong><span class="agas-template-name">Template: <?php echo esc_html($template ? preg_replace('/^.*? - /', '', $template['name']) : 'Blank design'); ?></span></div>
-            <nav class="agas-top-actions"><button type="button" id="agas-undo" title="Undo">Undo</button><button type="button" id="agas-redo" title="Redo">Redo</button><button type="button" id="agas-save">Save</button><button type="button" id="agas-preview">Preview</button><a href="<?php echo esc_url(self::gallery_url($product_id)); ?>" id="agas-change-template">Change Template</a></nav>
+            <nav class="agas-top-actions"><?php if (!empty($_GET['agas_from_cart'])) : ?><a class="agas-back-to-cart" href="<?php echo esc_url(wc_get_cart_url()); ?>">Back to cart</a><?php endif; ?><button type="button" id="agas-undo" title="Undo">Undo</button><button type="button" id="agas-redo" title="Redo">Redo</button><button type="button" id="agas-save">Save</button><button type="button" id="agas-preview">Preview</button><a href="<?php echo esc_url(self::gallery_url($product_id)); ?>" id="agas-change-template">Change Template</a></nav>
           </header>
           <div class="agas-main">
-            <aside class="agas-tools"><h3>Add to design</h3><div class="agas-panel-section"><label>Text</label><button type="button" id="agas-add-heading">Add Heading</button><button type="button" id="agas-add-body">Add Body</button></div><div class="agas-panel-section"><label>Graphics</label><div class="agas-shape-buttons"><button type="button" id="agas-add-rect">Rectangle</button><button type="button" id="agas-add-circle">Circle</button><button type="button" id="agas-add-star">Star</button></div></div><div class="agas-panel-section agas-object-actions"><label>Arrange selected object</label><div class="agas-command-grid"><button type="button" id="agas-rotate-left" title="Rotate 15 degrees counterclockwise">Rotate -15°</button><button type="button" id="agas-rotate-right" title="Rotate 15 degrees clockwise">Rotate +15°</button><button type="button" id="agas-flip-h">Flip H</button><button type="button" id="agas-flip-v">Flip V</button><button type="button" id="agas-lock">Lock object</button><button type="button" id="agas-center">Center object</button></div><label class="agas-opacity-control">Opacity <input type="range" id="agas-opacity" min="0" max="100" step="5" value="100"></label><p class="agas-shortcut-tip">⌘/Ctrl+C copy · V paste · D duplicate · X cut · Delete remove. Hold Shift to select multiple items.</p></div><div class="agas-panel-section"><label for="agas-bg">Background color</label><input id="agas-bg" type="color" value="#ffffff"></div><div class="agas-panel-section agas-logo-upload-actions"><label>Images &amp; logo slots</label><button type="button" id="agas-add-logo-slot">Add logo placeholder</button><button type="button" id="agas-replace-image" disabled>Upload / replace selected logo</button><p class="agas-hint">Select the dashed logo placeholder to upload. Replacing keeps the slot position and fits your image without stretching it.</p><input id="agas-logo-file" type="file" accept="image/png,image/jpeg" hidden><label for="agas-file">Add another PNG/JPG image</label><input id="agas-file" type="file" accept="image/png,image/jpeg"></div><p class="agas-hint">Drag objects to position them. Double-click text to edit. Select an object to use Copy, Paste, Duplicate, Rotate, Flip, Opacity and Lock.</p></aside>
+            <aside class="agas-tools"><h3>Add to design</h3><div class="agas-panel-section"><label>Text</label><button type="button" id="agas-add-heading">Add Heading</button><button type="button" id="agas-add-body">Add Body</button></div><div class="agas-panel-section agas-text-editor-section">
+                <label for="agas-text-content">Edit selected text</label>
+                <p class="agas-hint agas-text-hint">Click text once, then edit it here. Or use the text layers below.</p>
+                <div id="agas-text-edit-panel" hidden>
+                  <textarea id="agas-text-content" rows="3" placeholder="Select a text element to edit it"></textarea>
+                  <button type="button" id="agas-edit-on-canvas">Edit on canvas</button>
+                </div>
+                <div class="agas-text-layer-group">
+                  <label>Text layers</label>
+                  <div id="agas-text-layers" aria-label="Selectable text elements in this design"></div>
+                </div>
+              </div><div class="agas-panel-section"><label>Graphics</label><div class="agas-shape-buttons"><button type="button" id="agas-add-rect">Rectangle</button><button type="button" id="agas-add-circle">Circle</button><button type="button" id="agas-add-star">Star</button></div></div><div class="agas-panel-section agas-object-actions"><label>Arrange selected object</label><div class="agas-command-grid"><button type="button" id="agas-rotate-left" title="Rotate 15 degrees counterclockwise">Rotate -15°</button><button type="button" id="agas-rotate-right" title="Rotate 15 degrees clockwise">Rotate +15°</button><button type="button" id="agas-flip-h">Flip H</button><button type="button" id="agas-flip-v">Flip V</button><button type="button" id="agas-lock">Lock object</button><button type="button" id="agas-center">Center object</button></div><label class="agas-opacity-control">Opacity <input type="range" id="agas-opacity" min="0" max="100" step="5" value="100"></label><p class="agas-shortcut-tip">⌘/Ctrl+C copy · V paste · D duplicate · X cut · Delete remove. Hold Shift to select multiple items.</p></div><div class="agas-panel-section"><label for="agas-bg">Background color</label><input id="agas-bg" type="color" value="#ffffff"></div><div class="agas-panel-section agas-logo-upload-actions"><label>Images &amp; logo slots</label><button type="button" id="agas-add-logo-slot">Add logo placeholder</button><button type="button" id="agas-replace-image" disabled>Upload / replace selected logo</button><p class="agas-hint">Select the dashed logo placeholder to upload. Replacing keeps the slot position and fits your image without stretching it.</p><input id="agas-logo-file" type="file" accept="image/png,image/jpeg" hidden><label for="agas-file">Add another PNG/JPG image</label><input id="agas-file" type="file" accept="image/png,image/jpeg"></div><p class="agas-hint">Drag objects to position them. Double-click text to edit. Select an object to use Copy, Paste, Duplicate, Rotate, Flip, Opacity and Lock.</p></aside>
             <section class="agas-workspace"><div class="agas-object-toolbar" id="agas-object-toolbar"><label>Font <select id="agas-font"><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Times New Roman</option><option>Courier New</option></select></label><label>Size <input type="number" id="agas-font-size" min="8" max="160" value="32"></label><label>Color <input type="color" id="agas-color" value="#ffffff"></label><button type="button" id="agas-bold">Bold</button><button type="button" id="agas-copy" title="Copy selected object (Cmd/Ctrl+C)">Copy</button><button type="button" id="agas-paste" title="Paste copied object (Cmd/Ctrl+V)">Paste</button><button type="button" id="agas-duplicate" title="Duplicate selected object (Cmd/Ctrl+D)">Duplicate</button><button type="button" id="agas-cut" title="Cut selected object (Cmd/Ctrl+X)">Cut</button><button type="button" id="agas-delete">Delete</button><button type="button" id="agas-front">Bring forward</button><button type="button" id="agas-backward">Send backward</button></div><div class="agas-canvas-area"><div class="agas-ruler" id="agas-ruler">0 &nbsp; | &nbsp; 1 &nbsp; | &nbsp; 2 &nbsp; | &nbsp; 3 ft</div><div class="agas-canvas-viewport" id="agas-canvas-viewport"><div class="agas-canvas-shell" id="agas-canvas-shell"><canvas id="agas-canvas" width="900" height="600"></canvas><div class="agas-safety" id="agas-safety"></div></div></div><div id="agas-status" role="status" aria-live="polite">Ready to design</div></div></section>
             <aside class="agas-config"><h3>Product setup</h3><label>Size <select id="agas-size"><option value="3x2">3 x 2 ft</option><option value="4x2">4 x 2 ft</option><option value="6x3">6 x 3 ft</option><option value="8x4">8 x 4 ft</option><option value="custom">Custom size</option></select></label><div class="agas-two"><label>Width <input type="number" id="agas-width" min="0.25" max="20" step="0.25" value="3"></label><label>Height <input type="number" id="agas-height" min="0.25" max="20" step="0.25" value="2"></label></div><label>Unit <select id="agas-unit"><option value="ft">Feet</option><option value="in">Inches</option><option value="cm">Centimeters</option></select></label><label class="agas-check"><input id="agas-two-sided" type="checkbox"> Add back side</label><label class="agas-check"><input id="agas-grommets" type="checkbox"> Grommets</label><label class="agas-check"><input id="agas-pocket" type="checkbox"> Pole pocket</label><label>Design side <div class="agas-side-switch"><button type="button" class="active" id="agas-side-front">Front</button><button type="button" id="agas-side-back" disabled>Back</button></div></label><p class="agas-hint">Pricing is recalculated on the server at checkout.</p></aside>
           </div>
@@ -536,6 +555,46 @@ public static function upgrade_logo_slots() {
         return rest_ensure_response(array('id' => $id, 'template_url' => self::editor_url($product_id, $id, array('agas_edit_template' => $id))));
     }
 
+    /**
+     * Handle cart additions on a FRONTEND request, after WooCommerce has
+     * restored the customer's cart from its session during wp_loaded.
+     * admin-post.php is an admin request and does not reliably initialize
+     * existing frontend cart contents (which can replace earlier items).
+     */
+    public static function maybe_frontend_add_to_cart() {
+        if (empty($_GET['agas_design_add_to_cart'])) return;
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            wp_die('Use the design editor to add a customized product.', '', array('response' => 405));
+        }
+        self::add_to_cart();
+    }
+
+    /**
+     * Server-authoritative options always come from the saved design.
+     * Cart item options are snapshots for display only and may be stale when
+     * a customer edits a previously saved design before checkout.
+     */
+    private static function cart_design_options($item) {
+        $design_id = absint($item['agas_design_id'] ?? 0);
+        if (!$design_id) return null;
+        $design = get_post($design_id);
+        if (!$design || $design->post_type !== 'agas_design') return null;
+        $product_id = absint($item['product_id'] ?? 0);
+        if (!$product_id || (int) get_post_meta($design_id, '_agas_product_id', true) !== $product_id) return null;
+        $stored_token = (string) get_post_meta($design_id, '_agas_token', true);
+        $cart_token = (string) ($item['agas_design_token'] ?? '');
+        if (strlen($stored_token) < 25 || !hash_equals($stored_token, $cart_token)) return null;
+        $options = self::clean_options(get_post_meta($design_id, '_agas_options', true));
+        return is_wp_error($options) ? null : $options;
+    }
+
+    /** Refresh snapshots as WooCommerce restores the cart on a new request. */
+    public static function sync_session_cart_item($cart_item, $values, $cart_item_key) {
+        $options = self::cart_design_options($cart_item);
+        if ($options) $cart_item['agas_options'] = $options;
+        return $cart_item;
+    }
+
     public static function add_to_cart() {
         if (!function_exists('WC')) wp_die('WooCommerce is not available.', '', array('response' => 503));
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), 'agas_design_cart')) wp_die('Security check failed.', '', array('response' => 403));
@@ -548,26 +607,115 @@ public static function upgrade_logo_slots() {
         if (!$product || !$product->is_purchasable() || !self::is_designable($product_id)) wp_die('Product is unavailable.', '', array('response' => 400));
         $opts = self::clean_options(get_post_meta($id, '_agas_options', true));
         if (is_wp_error($opts)) wp_die('Design options are invalid.', '', array('response' => 400));
+        // Store the canonical server token even for authorized administrators
+        // who may have opened a design without including its share token.
+        $token = (string) get_post_meta($id, '_agas_token', true);
+        if (strlen($token) < 25) wp_die('Saved design token is invalid.', '', array('response' => 400));
         if (!WC()->cart) wc_load_cart();
-        $key = WC()->cart->add_to_cart($product_id, 1, 0, array(), array('agas_design_id' => $id, 'agas_design_token' => $token, 'agas_options' => $opts, 'agas_unique' => wp_generate_uuid4()));
+        if (!WC()->cart) wp_die('Could not initialize WooCommerce cart.', '', array('response' => 503));
+
+        // Compatibility for a cached v0.1.7 editor using the old admin-post
+        // endpoint. The new frontend endpoint does NOT need this extra load.
+        if (is_admin() && isset(WC()->cart->session) && is_object(WC()->cart->session)
+            && method_exists(WC()->cart->session, 'get_cart_from_session')) {
+            WC()->cart->session->get_cart_from_session();
+        }
+
+        // Returning from the cart editor should update the existing line
+        // instead of duplicating the SAME design. Different design IDs are
+        // separate lines, including two designs of the same WooCommerce item.
+        $existing_key = '';
+        foreach (WC()->cart->get_cart() as $item_key => $cart_item) {
+            if ((int) ($cart_item['agas_design_id'] ?? 0) === $id
+                && (int) ($cart_item['product_id'] ?? 0) === $product_id) {
+                $existing_key = $item_key;
+                break;
+            }
+        }
+        if ($existing_key) {
+            WC()->cart->cart_contents[$existing_key]['agas_options'] = $opts;
+            WC()->cart->cart_contents[$existing_key]['agas_design_token'] = $token;
+            $key = $existing_key;
+        } else {
+            $key = WC()->cart->add_to_cart($product_id, 1, 0, array(), array(
+                'agas_design_id' => $id,
+                'agas_design_token' => $token,
+                'agas_options' => $opts,
+                'agas_unique' => wp_generate_uuid4(),
+            ));
+        }
         if (!$key) wp_die('Could not add the customized product to the cart.', '', array('response' => 400));
+        WC()->cart->calculate_totals();
         wp_safe_redirect(wc_get_cart_url());
         exit;
     }
 
     public static function apply_cart_prices($cart) {
         if (!is_a($cart, 'WC_Cart')) return;
-        foreach ($cart->get_cart() as $item) {
-            if (empty($item['agas_design_id']) || !isset($item['agas_options'])) continue;
-            $opts = self::clean_options($item['agas_options']);
-            if (is_wp_error($opts)) continue;
-            $item['data']->set_price(self::calculate_price($opts));
+        foreach ($cart->get_cart() as $key => $item) {
+            if (empty($item['agas_design_id'])) continue;
+            $opts = self::cart_design_options($item);
+            if (!$opts) continue;
+            $cart->cart_contents[$key]['agas_options'] = $opts;
+            $cart->cart_contents[$key]['data']->set_price(self::calculate_price($opts));
         }
     }
 
+    /**
+     * WooCommerce's Cart block does not provide a supported per-line action slot.
+     * Place a clear design-editing panel before the block, keeping product links unchanged.
+     * We do not expose edit links for designs without matching cart session tokens.
+     */
+    private static function cart_design_actions_markup() {
+        if (!function_exists('WC') || !WC()->cart) return '';
+        $rows = array();
+        foreach (WC()->cart->get_cart() as $item) {
+            $id = absint($item['agas_design_id'] ?? 0);
+            $product_id = absint($item['product_id'] ?? 0);
+            if (!$id || !$product_id || get_post_type($id) !== 'agas_design') continue;
+            if ((int) get_post_meta($id, '_agas_product_id', true) !== $product_id) continue;
+            $canonical = (string) get_post_meta($id, '_agas_token', true);
+            $session_token = (string) ($item['agas_design_token'] ?? '');
+            if ($canonical === '' || $session_token === '' || !hash_equals($canonical, $session_token)) continue;
+            $template_id = absint(get_post_meta($id, '_agas_template_id', true));
+            if ($template_id && !self::template_belongs($template_id, $product_id)) $template_id = 0;
+            $url = self::editor_url($product_id, $template_id, array(
+                'agas_design' => $id,
+                'agas_token' => $canonical,
+                'agas_from_cart' => 1,
+            ));
+            $options = self::cart_design_options($item);
+            $details = $options && !is_wp_error($options)
+                ? $options['width'] . ' x ' . $options['height'] . ' ' . $options['unit'] .
+                  (!empty($options['double_sided']) ? ' / front and back' : ' / front only')
+                : '';
+            $product = wc_get_product($product_id);
+            $title = $product ? $product->get_name() : 'Customized product';
+            $rows[] = '<div class="agas-cart-edit-row"><div><strong>' . esc_html($title) .
+                ' - Design #' . esc_html((string) $id) . '</strong><small>' . esc_html($details) .
+                '</small></div><a class="agas-cart-edit-link" rel="nofollow" href="' .
+                esc_url($url) . '">Edit design</a></div>';
+        }
+        if (!$rows) return '';
+        return '<section class="agas-cart-edit-panel" aria-label="Edit your customized designs"><div class="agas-cart-edit-header"><h2>Edit your designs</h2><p>Need to change text, artwork, size or printing sides? Open your saved design, make changes, and return to this cart. Other items will stay in your cart.</p></div>' . implode('', $rows) . '</section>';
+    }
+
+    public static function cart_design_actions_content($content) {
+        if (!function_exists('is_cart') || !is_cart() || !in_the_loop() || !is_main_query()) return $content;
+        if (function_exists('wc_get_page_id') && (int) get_the_ID() !== (int) wc_get_page_id('cart')) return $content;
+        if (function_exists('has_block') && !has_block('woocommerce/cart', get_post())) return $content;
+        return self::cart_design_actions_markup() . $content;
+    }
+
+    public static function classic_cart_design_actions() {
+        if (function_exists('has_block') && has_block('woocommerce/cart', get_post())) return;
+        echo self::cart_design_actions_markup(); // Escaping is handled during construction.
+    }
+
     public static function cart_item_details($data, $item) {
-        if (empty($item['agas_design_id']) || empty($item['agas_options'])) return $data;
-        $opts = $item['agas_options'];
+        if (empty($item['agas_design_id'])) return $data;
+        $opts = self::cart_design_options($item);
+        if (!$opts) return $data;
         $data[] = array('key' => 'Design', 'value' => 'Custom design #' . absint($item['agas_design_id']));
         $data[] = array('key' => 'Size', 'value' => esc_html($opts['width'] . ' x ' . $opts['height'] . ' ' . $opts['unit']));
         $data[] = array('key' => 'Sides', 'value' => $opts['double_sided'] ? 'Front and Back' : 'Front only');
@@ -632,10 +780,10 @@ public static function upgrade_logo_slots() {
     }
 
     public static function order_item_meta($order_item, $cart_item_key, $values, $order) {
-        if (empty($values['agas_design_id']) || empty($values['agas_options'])) return;
+        if (empty($values['agas_design_id'])) return;
         $id = absint($values['agas_design_id']);
-        $opts = self::clean_options($values['agas_options']);
-        if (is_wp_error($opts)) return;
+        $opts = self::cart_design_options($values);
+        if (!$opts) return;
         $order_item->add_meta_data('_agas_design_id', $id, true);
         $order_item->add_meta_data('_agas_design_token', sanitize_text_field($values['agas_design_token'] ?? ''), true);
         $order_item->add_meta_data('Print Size', $opts['width'] . ' x ' . $opts['height'] . ' ' . $opts['unit'], true);

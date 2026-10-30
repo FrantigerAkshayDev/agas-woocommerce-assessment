@@ -21,7 +21,7 @@ A custom WordPress plugin that lets customers select an editable product templat
 4. **Design persistence:** Customer designs use a private `agas_design` post with metadata for the chosen product, template, front/back canvas JSON, printing options, share/edit token and low-resolution preview. Public REST save route validates inputs and has a basic rate limit.
 5. **Pricing:** Admin-configurable square-foot rate, minimum, back-side surcharge and finishing extras. Server recalculates the price in the WooCommerce cart. Never use a browser-supplied price as the authority.
 6. **Order handoff:** Order line item stores design ID and print options. Customer sees preview in modern Cart/Checkout blocks and order detail pages. Admin sees an edit/view link and **Print export center** from the order line item.
-7. **Print exporter (v0.1.7):** An admin-only screen takes saved Fabric canvas JSON from an order and renders a PDF or a PNG for each available side in the admin's browser. Fabric.js creates the SVG; svg2pdf.js + jsPDF attempt vector PDF output. If the PDF libraries are unavailable or SVG conversion fails, an in-plugin PDF generator embeds a 150-DPI JPEG rendering at true physical page dimensions. Raster fallback is not vector artwork. PNGs are rendered at physical dimensions × 150 pixels/inch with a pHYs density marker. A 0.125-inch colored bleed surrounds the chosen print size. Uploaded PNG/JPG originals can also be downloaded separately from this admin screen if their base64 data is preserved in the saved Fabric JSON.
+7. **Print exporter (v0.1.8):** An admin-only screen takes saved Fabric canvas JSON from an order and renders a PDF or a PNG for each available side in the admin's browser. Fabric.js creates the SVG; svg2pdf.js + jsPDF attempt vector PDF output. If the PDF libraries are unavailable or SVG conversion fails, an in-plugin PDF generator embeds a 150-DPI JPEG rendering at true physical page dimensions. Raster fallback is not vector artwork. PNGs are rendered at physical dimensions × 150 pixels/inch with a pHYs density marker. A 0.125-inch colored bleed surrounds the chosen print size. Uploaded PNG/JPG originals can also be downloaded separately from this admin screen if their base64 data is preserved in the saved Fabric JSON.
 
 ### Print-export filename
 
@@ -62,3 +62,28 @@ Complete the missing editor tools and SVG support; finish administrator template
 ## v0.1.7 PDF library fallback
 
 The print center attempts jsPDF/svg2pdf for vector output. Some development networks block those third-party scripts; the PDF button now remains usable through a bundled `assets/offline-pdf.js` generator and full-size JPEG at 150 DPI. Inspect the generated PDF page size and appearance. Do not claim the fallback PDF has vector text or that its bleed is fully print-preflighted.
+
+## v0.1.8 cart + PNG correctness fix
+
+- Custom-design add-to-cart now posts to a frontend URL so WooCommerce restores and preserves the existing cart session; the legacy admin-post handler is retained for cached tabs.
+- Distinct saved designs remain separate cart items; re-adding a design already in the cart updates its existing line.
+- Pricing, cart labels, and order item metadata are refreshed from server-saved options to prevent stale front/back charges after editing.
+- The PNG export reads the encoded pixel dimensions, retries if the browser downsizes `toBlob()`, and refuses a download if the final image does not have the required full print pixels. The `pHYs` resolution field is added to valid PNG output. This is a browser-only fallback, not a production image preflight.
+- For 3×2 ft + 0.125-inch bleed on every edge, the target PNG is 5438×3638 at ~150 DPI. Verify the actual local download with `sips -g pixelWidth -g pixelHeight -g dpiWidth -g dpiHeight filename.png` on macOS. Chat attachments may be resized during upload.
+
+### QA gate after installing v0.1.8
+
+1. In a single browser session, add Yard Sign (front, $24) and Custom Flag (front/back, $36). The cart must retain two separate lines and show $60 before taxes/shipping.
+2. Edit the saved Yard Sign design, activate Back, and click Continue to Cart. The cart should still contain two lines, now $36 + $36 = $72.
+3. Download 3×2 ft front PNG from an order and check the actual pixel dimensions/DPI in Downloads. The exporter now fails with a visible error rather than sending an undersized file.
+4. Confirm checkout shows the same two prices and both design references, then place a Cash on Delivery test order.
+
+### Local mock regression test
+
+Run `docker compose exec -T wordpress php /var/www/html/wp-content/plugins/agas-design-studio/tools/test_cart_regression.php </dev/null` from the project root. This tests pricing and option synchronization with mock cart items; it does not replace real browser testing with WooCommerce.
+
+### v0.1.9 usability and cart editing
+
+The design editor now offers **Edit selected text**, a list of text layers, and an **Edit on canvas** action (Enter also enters inline editing when a text object is selected). These controls make text editing possible without guessing the double-click gesture. The cart page displays an **Edit your designs** panel with one edit link per customized line. Each link includes the existing saved design token and returns to the editor. **Back to cart** is offered on the editor, and **Continue to Cart** resaves the same design so WooCommerce updates its existing line rather than duplicating it. The product name continues to link to the regular product page.
+
+The modern WooCommerce Cart block does not expose a supported per-item action slot; the separate cart panel is intentional. The older classic cart template uses its standard `woocommerce_before_cart` hook. See `README-UPDATE-v0.1.9.md` for acceptance tests.

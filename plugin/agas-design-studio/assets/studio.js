@@ -229,6 +229,114 @@
     var objects = sel.type === 'activeSelection' ? sel.getObjects() : [sel];
     return objects.some(function(obj) {return obj.agasLocked;}) ? null : sel;
   }
+  function isTextLayer(obj) {
+    return !!obj && ['textbox','i-text','text'].indexOf(obj.type) !== -1;
+  }
+  var selectedTextObject = null;
+  var pendingTextHistory = false;
+  var textHistoryTimer = null;
+
+  function flushTextHistory() {
+    if (textHistoryTimer) clearTimeout(textHistoryTimer);
+    textHistoryTimer = null;
+    if (pendingTextHistory) {
+      pendingTextHistory = false;
+      recordHistory();
+    }
+  }
+  function renderTextLayers() {
+    var holder = $('agas-text-layers');
+    holder.replaceChildren();
+    var layers = canvas.getObjects().filter(isTextLayer).reverse();
+    if (!layers.length) {
+      var msg = document.createElement('small');
+      msg.textContent = 'No text yet. Use Add Heading or Add Body.';
+      holder.appendChild(msg);
+    }
+    layers.forEach(function (obj) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'agas-text-layer-button' + (active() === obj ? ' is-selected' : '');
+      var label = (obj.text || '(empty text)').replace(/\s+/g, ' ').trim();
+      b.textContent = label.length > 38 ? label.slice(0, 38) + '...' : label;
+      b.title = 'Select and edit: ' + label;
+      b.disabled = !!cfg.readonly || viewing;
+      b.addEventListener('click', function () {
+        flushTextHistory();
+        canvas.setActiveObject(obj);
+        canvas.requestRenderAll();
+        updateObjectActions();
+        if (!obj.agasLocked) $('agas-text-content').focus();
+      });
+      holder.appendChild(b);
+    });
+  }
+  function syncTextEditor() {
+    var obj = active();
+    if (selectedTextObject !== obj) flushTextHistory();
+    var isText = isTextLayer(obj) && obj.type !== 'activeSelection';
+    var panel = $('agas-text-edit-panel');
+    panel.hidden = !isText;
+    var field = $('agas-text-content');
+    var changed = selectedTextObject !== obj;
+    selectedTextObject = obj;
+    if (isText && (changed || (document.activeElement !== field && !pendingTextHistory))) {
+      field.value = obj.text || '';
+    }
+    field.disabled = !isText || !!obj.agasLocked || !!cfg.readonly || viewing;
+    $('agas-edit-on-canvas').disabled = !isText || !!obj.agasLocked ||
+      !!cfg.readonly || viewing || typeof obj.enterEditing !== 'function';
+    renderTextLayers();
+  }
+  function editTextOnCanvas() {
+    var obj = active();
+    if (!isTextLayer(obj)) {
+      message('Select a text element first, or select it from the Text layers list.');
+      return;
+    }
+    if (obj.agasLocked || cfg.readonly || viewing) {
+      message('This text is locked. Unlock it before editing.');
+      return;
+    }
+    if (typeof obj.enterEditing !== 'function') {
+      $('agas-text-content').focus();
+      message('Edit this text using the text field on the left.');
+      return;
+    }
+    canvas.setActiveObject(obj);
+    obj.enterEditing();
+    if (obj.hiddenTextarea) obj.hiddenTextarea.focus();
+    if (typeof obj.selectAll === 'function') obj.selectAll();
+    message('Typing will replace the selected text. Press Escape to finish editing.');
+  }
+  $('agas-text-content').addEventListener('input', function () {
+    var obj = selectedTextObject;
+    if (!isTextLayer(obj) || obj.agasLocked || cfg.readonly || viewing) return;
+    obj.set('text', this.value);
+    obj.setCoords();
+    canvas.requestRenderAll();
+    dirty = true;
+    pendingTextHistory = true;
+    renderTextLayers();
+    if (textHistoryTimer) clearTimeout(textHistoryTimer);
+    textHistoryTimer = setTimeout(flushTextHistory, 700);
+  });
+  $('agas-text-content').addEventListener('blur', flushTextHistory);
+  $('agas-edit-on-canvas').addEventListener('click', editTextOnCanvas);
+  canvas.on('mouse:dblclick', function (ev) {
+    if (isTextLayer(ev.target) && !ev.target.agasLocked && !cfg.readonly && !viewing) {
+      canvas.setActiveObject(ev.target);
+      if (typeof ev.target.enterEditing === 'function' && !ev.target.isEditing) {
+        ev.target.enterEditing();
+        if (ev.target.hiddenTextarea) ev.target.hiddenTextarea.focus();
+      }
+    }
+  });
+  canvas.on('text:editing:exited', function () {
+    recordHistory();
+    syncTextEditor();
+  });
+
   function updateObjectActions() {
     var sel = active();
     var canEdit = !!editableSelection() && !cfg.readonly && !viewing;
@@ -243,6 +351,7 @@
     $('agas-replace-image').disabled = !canReplace;
     $('agas-replace-image').textContent = sel && sel.agasImagePlaceholder ? 'Upload logo to this placeholder' : 'Replace selected image';
     if (sel) fontControls();
+    syncTextEditor();
   }
   canvas.on('object:added', recordHistory);
   canvas.on('object:removed', recordHistory);
@@ -251,6 +360,9 @@
   canvas.on('selection:created', updateObjectActions);
   canvas.on('selection:updated', updateObjectActions);
   canvas.on('selection:cleared', updateObjectActions);
+  canvas.on('object:added', renderTextLayers);
+  canvas.on('object:removed', renderTextLayers);
+  canvas.on('text:changed', renderTextLayers);
 
   /** Internal canvas clipboard. The operating system clipboard is not accessed. */
   function cloneSelected(callback) {
@@ -652,7 +764,10 @@ dropArea.addEventListener('drop', function (ev) {
     if (isTyping) return;
     var command = (e.ctrlKey || e.metaKey) && !e.altKey;
     var key = e.key.toLowerCase();
-    if (command && key === 'z') {e.preventDefault();travel(e.shiftKey ? 1 : -1);}
+    if (e.key === 'Enter' && isTextLayer(active()) && !command) {
+      e.preventDefault(); editTextOnCanvas();
+    }
+    else if (command && key === 'z') {e.preventDefault();travel(e.shiftKey ? 1 : -1);}
     else if (command && key === 'y') {e.preventDefault();travel(1);}
     else if (command && key === 'c' && editableSelection()) {e.preventDefault();copySelected();}
     else if (command && key === 'v' && internalClipboard) {e.preventDefault();pasteSelected();}
@@ -718,6 +833,11 @@ dropArea.addEventListener('drop', function (ev) {
     var json = await serializeAll();
     var payload = {product_id:cfg.productId,template_id:(template ? template.id : 0),front:json.front,back:json.back,options:getOptions(),preview:json.preview,design_id:savedDesign ? savedDesign.id : 0,token:savedDesign ? savedDesign.token : ''};
     var result = await postJson('designs', payload);
+    if (cfg.returnToCart && result.edit_url) {
+      var editLink = new URL(result.edit_url, window.location.href);
+      editLink.searchParams.set('agas_from_cart', '1');
+      result.edit_url = editLink.toString();
+    }
     savedDesign = {id:result.id,token:result.token};
     dirty = false;
     message('Design saved as #' + result.id + '. Shareable editing link: ' + result.edit_url);
@@ -756,6 +876,7 @@ dropArea.addEventListener('drop', function (ev) {
       setOptions(savedDesign.options);
     }
     await loadJSON(initial);
+    renderTextLayers();
     sides.front = serializedCanvas();
     $('agas-bg').value = /^#[0-9A-Fa-f]{6}$/.test(canvas.backgroundColor) ? canvas.backgroundColor : '#ffffff';
     $('agas-unit').dataset.previous = $('agas-unit').value;
@@ -770,7 +891,7 @@ dropArea.addEventListener('drop', function (ev) {
       });
       message('Read-only order design preview.');
     } else {
-      message('Ready. Edit the template, then Save or Continue to Cart.');
+      message('Ready. Select any text once and edit it in the left panel, or press Enter to type on canvas.');
     }
   }
   setup().catch(function (error) { console.error('[AGAS Studio] Initialization error', error); message('Designer failed to load: ' + error.message + '. See browser Console for details.', true); });

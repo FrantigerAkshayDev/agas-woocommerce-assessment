@@ -127,7 +127,11 @@
   async function withDpiMetadata(blob) {
     var bytes = new Uint8Array(await blob.arrayBuffer());
     var signature = [137, 80, 78, 71, 13, 10, 26, 10];
-    if (signature.some(function (v, i) {return bytes[i] !== v;})) throw new Error('Generated PNG has an invalid signature.');
+    var dimensions = pngPixelDimensions(bytes);
+    if (!expectedPixelDimensions(dimensions)) {
+      throw new Error('Incorrect PNG export size: ' + dimensions.width + ' × ' + dimensions.height
+        + ' pixels; expected ' + pixelW + ' × ' + pixelH + '.');
+    }
     function read32(o) {return (((bytes[o] << 24) >>> 0) + (bytes[o + 1] << 16) + (bytes[o + 2] << 8) + bytes[o + 3]) >>> 0;}
     function set32(a, o, v) {a[o] = (v >>> 24) & 255; a[o+1] = (v >>> 16) & 255; a[o+2] = (v >>> 8) & 255; a[o+3] = v & 255;}
     function crc32(chunk) {
@@ -177,15 +181,49 @@
     return target.canvas;
   }
 
+  function pngPixelDimensions(bytes) {
+    var signature = [137, 80, 78, 71, 13, 10, 26, 10];
+    if (bytes.length < 24 || signature.some(function (v, i) {return bytes[i] !== v;})) {
+      throw new Error('PNG has an invalid signature.');
+    }
+    function read32(offset) {
+      return ((bytes[offset] * 16777216) + (bytes[offset + 1] << 16)
+        + (bytes[offset + 2] << 8) + bytes[offset + 3]) >>> 0;
+    }
+    return {width: read32(16), height: read32(20)};
+  }
+  async function pixelDimensionsFromBlob(blob) {
+    return pngPixelDimensions(new Uint8Array(await blob.slice(0, 24).arrayBuffer()));
+  }
+  function expectedPixelDimensions(dimensions) {
+    return dimensions.width === pixelW && dimensions.height === pixelH;
+  }
+
+  /** The exported PNG must have real print pixels, not just a DPI label. */
   async function highResolutionPNG(visual, scene) {
     var output = await highResolutionCanvas(visual, scene);
-    if (!output.toBlob) return dataUrlToBlob(output.toDataURL('image/png'));
-    return new Promise(function (resolve, reject) {
-      output.toBlob(function (blob) {
-        if (blob) resolve(blob);
-        else reject(new Error('Browser could not encode the full-size PNG.'));
-      }, 'image/png');
-    });
+    if (output.width !== pixelW || output.height !== pixelH) {
+      throw new Error('Browser could not allocate the required print-resolution canvas.');
+    }
+    var png;
+    if (output.toBlob) {
+      png = await new Promise(function (resolve, reject) {
+        output.toBlob(function (blob) {
+          if (blob) resolve(blob);
+          else reject(new Error('Browser could not encode the full-size PNG.'));
+        }, 'image/png');
+      });
+      if (expectedPixelDimensions(await pixelDimensionsFromBlob(png))) return png;
+    }
+    // Browser encoders can sometimes downscale a large PNG. Try direct
+    // serialization once rather than silently distributing an undersized file.
+    png = dataUrlToBlob(output.toDataURL('image/png'));
+    var actual = await pixelDimensionsFromBlob(png);
+    if (!expectedPixelDimensions(actual)) {
+      throw new Error('Browser exported only ' + actual.width + ' × ' + actual.height
+        + ' pixels; ' + pixelW + ' × ' + pixelH + ' are required. No file downloaded.');
+    }
+    return png;
   }
 
   function jpegBytesFromCanvas(canvas) {

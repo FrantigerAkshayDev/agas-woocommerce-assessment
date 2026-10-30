@@ -191,3 +191,25 @@ body.admin-bar.agas-ds-app-page .agas-standalone-shell{height:calc(100dvh - 32px
 .agas-logo-upload-actions button:disabled{background:#f3f6f9;border-color:#dde6ed;color:#8696a5}
 .agas-logo-upload-actions .agas-hint{margin:8px 0 14px}
 .agas-standalone-shell .agas-logo-upload-actions{grid-column:1/-1}
+
+/* v0.1.9: explicit text editing and a reliable cart-block edit-design panel. */
+.agas-text-editor-section .agas-text-hint{margin:0 0 9px;line-height:1.45}
+.agas-text-edit-panel[hidden],#agas-text-edit-panel[hidden]{display:none!important}
+#agas-text-content{box-sizing:border-box;display:block;width:100%;min-height:84px;resize:vertical;border:1px solid #b8cada;border-radius:8px;padding:9px;color:#153450;background:#fff;font:13px/1.45 system-ui,sans-serif}
+#agas-text-content:focus{outline:2px solid #2464dc;outline-offset:2px}
+#agas-edit-on-canvas{margin-top:8px;width:100%}
+.agas-text-layer-group{margin-top:12px}
+#agas-text-layers{max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:5px}
+#agas-text-layers small{font-size:11px;color:#6c8399}
+.agas-designer button.agas-text-layer-button{display:block;width:100%;text-align:left;padding:7px 9px;font-size:12px;white-space:normal;overflow-wrap:anywhere;line-height:1.4;min-height:32px}
+.agas-designer button.agas-text-layer-button.is-selected{background:#e4effe;border-color:#2167df;color:#173e7b}
+.agas-top-actions .agas-back-to-cart{background:#eaf3fe;color:#174b91;padding:9px 12px;border-radius:8px;font-weight:700;text-decoration:none}
+.agas-cart-edit-panel{margin:16px 0 22px;border:1px solid #cadbec;background:#f7fbff;border-radius:12px;padding:18px;box-shadow:0 3px 10px #152c4410}
+.agas-cart-edit-header h2{font-size:20px;font-weight:750;margin:0 0 4px;line-height:1.25;color:#132e4a}
+.agas-cart-edit-header p{font-size:14px;color:#4b637b;margin:0 0 14px;line-height:1.5}
+.agas-cart-edit-row{padding:11px 0;border-top:1px solid #d7e3ed;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.agas-cart-edit-row strong{display:block;font-size:14px;color:#163751}
+.agas-cart-edit-row small{display:block;margin-top:4px;font-size:12px;color:#596e81}
+.agas-cart-edit-link{display:inline-block;flex-shrink:0;text-decoration:none!important;padding:10px 14px;border-radius:7px;background:#2157cd;color:#fff!important;font-size:13px;font-weight:700;line-height:1.1}
+.agas-cart-edit-link:hover,.agas-cart-edit-link:focus{background:#1745ac;color:#fff!important}
+@media(max-width:600px){.agas-cart-edit-row{align-items:flex-start;flex-direction:column;gap:8px}.agas-cart-edit-panel{padding:14px}}
