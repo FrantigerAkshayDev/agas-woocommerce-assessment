@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AGAS Design Studio
  * Description: Custom WooCommerce template gallery, online canvas designer, and order integration.
- * Version: 0.1.5
+ * Version: 0.1.6
  * Requires Plugins: woocommerce
  * Text Domain: agas-design-studio
  */
@@ -10,7 +10,7 @@
 defined('ABSPATH') || exit;
 
 final class AGAS_Design_Studio {
-    const VERSION = '0.1.5';
+    const VERSION = '0.1.6';
     const REST_NS = 'agas-design/v1';
 
     public static function boot() {
@@ -32,6 +32,9 @@ final class AGAS_Design_Studio {
         add_action('woocommerce_order_item_meta_end', array(__CLASS__, 'order_item_preview'), 10, 4);
         add_action('woocommerce_checkout_create_order_line_item', array(__CLASS__, 'order_item_meta'), 10, 4);
         add_action('woocommerce_after_order_itemmeta', array(__CLASS__, 'admin_order_links'), 10, 3);
+        add_action('woocommerce_admin_order_data_after_order_details', array(__CLASS__, 'admin_order_print_panel'), 10, 1);
+        add_action('admin_post_agas_design_print_center', array(__CLASS__, 'print_center'));
+        add_action('admin_post_agas_design_original', array(__CLASS__, 'download_original'));
         add_action('add_meta_boxes_agas_template', array(__CLASS__, 'add_template_box'));
         add_action('save_post_agas_template', array(__CLASS__, 'save_template_box'));
         add_action('admin_menu', array(__CLASS__, 'admin_menu'));
@@ -650,6 +653,164 @@ public static function upgrade_logo_slots() {
         $product_id = (int) get_post_meta($id, '_agas_product_id', true);
         $template_id = (int) get_post_meta($id, '_agas_template_id', true);
         echo '<p class="agas-admin-link"><a target="_blank" rel="noopener" href="' . esc_url(self::editor_url($product_id, $template_id, array('agas_design' => $id, 'agas_readonly' => 1))) . '">Open saved design</a></p>';
+        $order_id = absint($item->get_order_id());
+        $line_id = absint($item->get_id());
+        $export_url = wp_nonce_url(add_query_arg(array('action' => 'agas_design_print_center', 'order_id' => $order_id, 'line_id' => $line_id), admin_url('admin-post.php')), 'agas_print_' . $order_id . '_' . $line_id);
+        echo '<p class="agas-admin-link"><a href="' . esc_url($export_url) . '" target="_blank" rel="noopener">Print export center (PDF / 150 DPI PNG / original uploads)</a></p>';
+    }
+
+
+    /** Secondary link location for newer WooCommerce order administration screens. */
+    public static function admin_order_print_panel($order) {
+        if (!current_user_can('manage_woocommerce') || !is_a($order, 'WC_Order')) return;
+        $links = array();
+        foreach ($order->get_items('line_item') as $item) {
+            $line_id = absint($item->get_id());
+            $design_id = absint($item->get_meta('_agas_design_id', true));
+            if (!$design_id || get_post_type($design_id) !== 'agas_design') continue;
+            $url = wp_nonce_url(add_query_arg(array('action' => 'agas_design_print_center', 'order_id' => $order->get_id(), 'line_id' => $line_id), admin_url('admin-post.php')), 'agas_print_' . $order->get_id() . '_' . $line_id);
+            $links[] = '<li><a target="_blank" rel="noopener" href="' . esc_url($url) . '">' . esc_html($item->get_name()) . ' — Download PDF / 150-DPI PNG</a></li>';
+        }
+        if ($links) echo '<div class="agas-order-print-panel"><h3>AGAS Design Studio — Print Files</h3><ul>' . implode('', $links) . '</ul></div>';
+    }
+
+    /**
+     * Exports are initiated by an authenticated store administrator. Nothing
+     * is rendered from guest-supplied JSON on the order management screen.
+     * This prototype generates PDFs/PNGs in the browser from the saved Fabric
+     * canvas, avoiding a new server-side graphics dependency in the demo.
+     */
+    private static function print_order_item($order_id, $line_id) {
+        if (!current_user_can('manage_woocommerce') || !function_exists('wc_get_order')) return null;
+        $order = wc_get_order($order_id);
+        if (!$order) return null;
+        $item = $order->get_item($line_id);
+        if (!$item || !is_a($item, 'WC_Order_Item_Product')) return null;
+        $design_id = absint($item->get_meta('_agas_design_id', true));
+        if (!$design_id || get_post_type($design_id) !== 'agas_design') return null;
+        return array($order, $item, $design_id);
+    }
+
+    private static function print_canvas_data($design_id, $side) {
+        $key = $side === 'back' ? '_agas_back' : '_agas_front';
+        $canvas = json_decode((string) get_post_meta($design_id, $key, true), true);
+        return self::valid_canvas($canvas) ? $canvas : null;
+    }
+
+    /** Enumerate user-uploaded image sources, preserving source bytes. */
+    private static function original_images($canvas) {
+        if (!is_array($canvas)) return array();
+        $found = array();
+        $stack = isset($canvas['objects']) && is_array($canvas['objects']) ? $canvas['objects'] : array();
+        while ($stack) {
+            $obj = array_pop($stack);
+            if (!is_array($obj)) continue;
+            if (isset($obj['objects']) && is_array($obj['objects'])) {
+                foreach ($obj['objects'] as $child) $stack[] = $child;
+            }
+            if (($obj['type'] ?? '') !== 'image') continue;
+            $src = $obj['src'] ?? '';
+            if (!is_string($src) || strlen($src) > 2500000) continue;
+            if (!preg_match('#^data:image/(png|jpeg);base64,([a-zA-Z0-9+/=]+)$#D', $src, $m)) continue;
+            $name = sanitize_file_name((string) ($obj['agasOriginalName'] ?? 'customer-artwork'));
+            if (!$name) $name = 'customer-artwork';
+            $ext = $m[1] === 'png' ? 'png' : 'jpg';
+            $filename = preg_replace('/\.(png|jpg|jpeg)$/i', '', $name) . '.' . $ext;
+            $found[] = array('name' => $filename, 'src' => $src, 'type' => $ext);
+        }
+        return array_reverse($found);
+    }
+
+    public static function download_original() {
+        $order_id = absint($_GET['order_id'] ?? 0);
+        $line_id = absint($_GET['line_id'] ?? 0);
+        $side = sanitize_key($_GET['side'] ?? '');
+        $index = isset($_GET['index']) ? absint($_GET['index']) : -1;
+        if (!in_array($side, array('front', 'back'), true)) wp_die('Invalid print side.', '', array('response' => 400));
+        check_admin_referer('agas_original_' . $order_id . '_' . $line_id . '_' . $side . '_' . $index);
+        $info = self::print_order_item($order_id, $line_id);
+        if (!$info) wp_die('Order artwork not available.', '', array('response' => 403));
+        $canvas = self::print_canvas_data($info[2], $side);
+        $files = self::original_images($canvas);
+        if (!isset($files[$index])) wp_die('Original upload not found.', '', array('response' => 404));
+        if (!preg_match('#^data:image/(png|jpeg);base64,([a-zA-Z0-9+/=]+)$#D', $files[$index]['src'], $m)) wp_die('Invalid image.', '', array('response' => 400));
+        $bytes = base64_decode($m[2], true);
+        if (!$bytes || strlen($bytes) > 1900000) wp_die('Invalid file content.', '', array('response' => 400));
+        $image = @getimagesizefromstring($bytes);
+        if (!$image || !in_array($image['mime'], array('image/png', 'image/jpeg'), true)) wp_die('Unsupported image data.', '', array('response' => 400));
+        nocache_headers();
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Type: ' . $image['mime']);
+        header('Content-Disposition: attachment; filename="' . str_replace('"', '', $files[$index]['name']) . '"');
+        header('Content-Length: ' . strlen($bytes));
+        echo $bytes;
+        exit;
+    }
+
+    public static function print_center() {
+        $order_id = absint($_GET['order_id'] ?? 0);
+        $line_id = absint($_GET['line_id'] ?? 0);
+        check_admin_referer('agas_print_' . $order_id . '_' . $line_id);
+        $info = self::print_order_item($order_id, $line_id);
+        if (!$info) wp_die('Order or design not found, or access denied.', '', array('response' => 403));
+        list($order, $item, $design_id) = $info;
+        $options = self::clean_options((array) get_post_meta($design_id, '_agas_options', true));
+        if (is_wp_error($options)) wp_die('Saved print dimensions are invalid.', '', array('response' => 400));
+        $front = self::print_canvas_data($design_id, 'front');
+        $back = !empty($options['double_sided']) ? self::print_canvas_data($design_id, 'back') : null;
+        if (!$front || (!empty($options['double_sided']) && !$back)) wp_die('Saved canvas data is unavailable.', '', array('response' => 404));
+        $line_index = 1;
+        foreach ($order->get_items('line_item') as $order_line) {
+            if ((int) $order_line->get_id() === $line_id) break;
+            $line_index++;
+        }
+        $payload = array(
+            'orderId' => (int) $order_id,
+            'lineIndex' => (int) $line_index,
+            'product' => $item->get_name(),
+            'size' => $options,
+            'front' => $front,
+            'back' => $back,
+            'bleedInches' => 0.125,
+            'dpi' => 150,
+        );
+        nocache_headers();
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: DENY');
+        header('Referrer-Policy: no-referrer');
+        header('Content-Type: text/html; charset=utf-8');
+        $fabric_url = 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js';
+        $pdf_url = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+        $svg_url = 'https://cdn.jsdelivr.net/npm/svg2pdf.js@2.8.1/dist/svg2pdf.umd.min.js';
+        $print_js = plugins_url('assets/print-export.js', __FILE__);
+        $options_desc = $options['width'] . ' x ' . $options['height'] . ' ' . $options['unit'];
+        $back_link = $order->get_edit_order_url();
+        echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+        echo '<title>AGAS Print Exports — Order #' . esc_html($order_id) . '</title>';
+        echo '<style>body{font-family:system-ui,-apple-system,Arial;background:#f4f7fb;color:#142b43;margin:0}header{background:#fff;border-bottom:1px solid #dde4ee;padding:20px max(24px,6vw)}main{max-width:960px;margin:28px auto;padding:0 20px}h1{margin:4px 0 10px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}.card{background:#fff;border:1px solid #dde4ee;border-radius:12px;padding:22px}button{background:#1551c0;color:white;border:0;padding:12px 16px;margin:6px 8px 6px 0;border-radius:8px;font-weight:600;cursor:pointer}button:disabled{opacity:.5;cursor:wait}a{color:#1551c0}small,.muted{color:#62738b}#agas-print-status{font-weight:600;line-height:1.6}.warn{background:#fff9e9;padding:12px;border-left:4px solid #eab308}.bad{color:#bb1d28}.good{color:#187044}ul{padding-left:20px;line-height:1.8}</style></head><body>';
+        echo '<header><strong>AGAS DESIGN STUDIO · PRINT EXPORT CENTER</strong> &nbsp; <a href="' . esc_url($back_link) . '">Back to order</a></header>';
+        echo '<main><h1>Order #' . esc_html($order_id) . ' — ' . esc_html($item->get_name()) . '</h1>';
+        echo '<p class="muted">Line ' . esc_html($line_index) . ' · Design #' . esc_html($design_id) . ' · Print size ' . esc_html($options_desc) . ' · 0.125-inch bleed on each edge · 150 DPI PNG</p>';
+        echo '<p class="warn">Demo export: PDF attempts vector output via SVG; browser fallback may rasterize unsupported effects. Check artwork dimensions, font appearance, image quality, and bleed in a print preflight before manufacturing. Extremely large designs may exceed browser memory.</p>';
+        echo '<div class="grid"><section class="card"><h2>Front side</h2><p><button data-agas-export="pdf" data-side="front">Download Front PDF</button><button data-agas-export="png" data-side="front">Download Front 150-DPI PNG</button></p></section>';
+        if ($back) echo '<section class="card"><h2>Back side</h2><p><button data-agas-export="pdf" data-side="back">Download Back PDF</button><button data-agas-export="png" data-side="back">Download Back 150-DPI PNG</button></p></section>';
+        echo '</div><section class="card" style="margin-top:18px"><h2>Customer-uploaded originals</h2><ul>';
+        $total = 0;
+        foreach (array('front' => $front, 'back' => $back) as $side => $json) {
+            if (!$json) continue;
+            foreach (self::original_images($json) as $index => $image) {
+                $url = wp_nonce_url(add_query_arg(array('action' => 'agas_design_original', 'order_id' => $order_id, 'line_id' => $line_id, 'side' => $side, 'index' => $index), admin_url('admin-post.php')), 'agas_original_' . $order_id . '_' . $line_id . '_' . $side . '_' . $index);
+                echo '<li>' . esc_html(ucfirst($side)) . ': <a href="' . esc_url($url) . '">' . esc_html($image['name']) . '</a></li>';
+                $total++;
+            }
+        }
+        if (!$total) echo '<li>No uploaded image originals are attached to this saved design.</li>';
+        echo '</ul></section><section class="card" style="margin-top:18px"><h2>Export diagnostics</h2><p id="agas-print-status" aria-live="polite">Loading canvas and PDF libraries…</p><div id="agas-print-dimensions" class="muted"></div></section>';
+        echo '<script type="application/json" id="agas-print-data">' . wp_json_encode($payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>';
+        echo '<script src="' . esc_url($fabric_url) . '"></script><script src="' . esc_url($pdf_url) . '"></script><script src="' . esc_url($svg_url) . '"></script>';
+        echo '<script src="' . esc_url($print_js) . '?ver=' . esc_attr(self::VERSION) . '"></script>';
+        echo '</main></body></html>';
+        exit;
     }
 
     public static function add_template_box() {
