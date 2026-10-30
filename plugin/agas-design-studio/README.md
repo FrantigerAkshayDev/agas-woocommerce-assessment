@@ -6,7 +6,7 @@ A custom WordPress plugin that lets customers select an editable product templat
 
 - Docker and Docker Compose; or WordPress with PHP 8.3, MariaDB/MySQL, and WooCommerce installed.
 - WordPress and WooCommerce. The plugin does not modify core files or require any paid product designer.
-- An internet connection to load Fabric.js in the editor, plus Fabric.js, jsPDF and svg2pdf.js in the browser-based print exporter.
+- An internet connection to load Fabric.js in the editor, plus an optional jsPDF/svg2pdf.js connection in the browser-based print exporter. A bundled dependency-free raster PDF fallback works when those remote PDF libraries are unavailable.
 - For the supplied Compose environment, run `docker compose up -d` from the repository root, open `http://localhost:8099`, install WordPress and WooCommerce, then activate **AGAS Design Studio**.
 - Create three **published simple products** named **Outdoor Vinyl Banner**, **Custom Flag**, and **Yard Sign**. The plugin identifies the demo products by these names.
 - Enable **Cash on Delivery** under WooCommerce > Settings > Payments (including for the configured shipping method) to place test orders.
@@ -21,7 +21,7 @@ A custom WordPress plugin that lets customers select an editable product templat
 4. **Design persistence:** Customer designs use a private `agas_design` post with metadata for the chosen product, template, front/back canvas JSON, printing options, share/edit token and low-resolution preview. Public REST save route validates inputs and has a basic rate limit.
 5. **Pricing:** Admin-configurable square-foot rate, minimum, back-side surcharge and finishing extras. Server recalculates the price in the WooCommerce cart. Never use a browser-supplied price as the authority.
 6. **Order handoff:** Order line item stores design ID and print options. Customer sees preview in modern Cart/Checkout blocks and order detail pages. Admin sees an edit/view link and **Print export center** from the order line item.
-7. **Print exporter (v0.1.6):** An admin-only screen takes saved Fabric canvas JSON from an order and renders a PDF or a PNG for each available side in the admin's browser. Fabric.js creates the SVG; svg2pdf.js + jsPDF attempt vector PDF output. Unsupported SVG features fall back to a raster PDF. PNGs are rendered at physical dimensions × 150 pixels/inch with a pHYs density marker. A 0.125-inch colored bleed surrounds the chosen print size. Uploaded PNG/JPG originals can also be downloaded separately from this admin screen if their base64 data is preserved in the saved Fabric JSON.
+7. **Print exporter (v0.1.7):** An admin-only screen takes saved Fabric canvas JSON from an order and renders a PDF or a PNG for each available side in the admin's browser. Fabric.js creates the SVG; svg2pdf.js + jsPDF attempt vector PDF output. If the PDF libraries are unavailable or SVG conversion fails, an in-plugin PDF generator embeds a 150-DPI JPEG rendering at true physical page dimensions. Raster fallback is not vector artwork. PNGs are rendered at physical dimensions × 150 pixels/inch with a pHYs density marker. A 0.125-inch colored bleed surrounds the chosen print size. Uploaded PNG/JPG originals can also be downloaded separately from this admin screen if their base64 data is preserved in the saved Fabric JSON.
 
 ### Print-export filename
 
@@ -58,3 +58,7 @@ After WooCommerce successfully creates the order, collect order ID, customer/shi
 ## If given five more days
 
 Complete the missing editor tools and SVG support; finish administrator template status/category/multi-product assignment workflows and previews; add render queue with durable PDF/PNG/original-file storage, object-lock rules, automated PDF preflight and source-image DPI warnings; test Chrome/Safari/mobile, order email and My Account, checkout block regressions and all supported sizes; deploy a reviewer-accessible staging site with CI and backup/restore automation.
+
+## v0.1.7 PDF library fallback
+
+The print center attempts jsPDF/svg2pdf for vector output. Some development networks block those third-party scripts; the PDF button now remains usable through a bundled `assets/offline-pdf.js` generator and full-size JPEG at 150 DPI. Inspect the generated PDF page size and appearance. Do not claim the fallback PDF has vector text or that its bleed is fully print-preflighted.

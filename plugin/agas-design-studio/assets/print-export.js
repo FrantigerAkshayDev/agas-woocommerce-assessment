@@ -21,11 +21,13 @@
     message('Fabric.js failed to load. Check internet access before exporting artwork.', true);
     return;
   }
-  if (!pdfReady) {
+  var offlinePDFReady = !!(window.AGASRasterPDF && typeof window.AGASRasterPDF.create === 'function');
+  if (!pdfReady && !offlinePDFReady) {
     document.querySelectorAll('[data-agas-export="pdf"]').forEach(function (button) { button.disabled = true; });
-    message('PNG export is available; PDF export requires jsPDF to load.', true);
+    message('PDF export unavailable: both jsPDF and the local raster PDF fallback failed to load.', true);
   } else {
-    message(svgReady ? 'Ready to export: PDF vector conversion available.' : 'Ready to export: PDF will use a raster fallback because svg2pdf.js is unavailable.', false);
+    message(svgReady ? 'Ready: vector PDF and 150-DPI PNG export.' :
+      'Ready: PDF uses a 150-DPI raster fallback (vector conversion library unavailable); PNG export is also available.', false);
   }
 
   function inches(value, unit) {
@@ -158,7 +160,7 @@
     return new Blob(parts, {type:'image/png'});
   }
 
-  async function highResolutionPNG(visual, scene) {
+  async function highResolutionCanvas(visual, scene) {
     var target = newFinalCanvas();
     var ctx = target.ctx;
     ctx.fillStyle = backgroundFor(scene);
@@ -167,38 +169,56 @@
     var contentW = widthIn * dpi;
     var contentH = heightIn * dpi;
     var multiplier = Math.min(contentW / 900, contentH / 600);
-    // Render the objects again at print resolution; simply stretching the
-    // browser's 900x600 preview would not produce 150-DPI artwork.
+    // Render the original Fabric objects at print resolution, not a low-res preview.
     var source = visual.toDataURL({format: 'png', multiplier: multiplier, enableRetinaScaling: false});
     var image = await imageLoaded(source);
     var drawnW = 900 * multiplier, drawnH = 600 * multiplier;
     ctx.drawImage(image, bleedPx + (contentW - drawnW) / 2, bleedPx + (contentH - drawnH) / 2, drawnW, drawnH);
-    if (!target.canvas.toBlob) return dataUrlToBlob(target.canvas.toDataURL('image/png'));
+    return target.canvas;
+  }
+
+  async function highResolutionPNG(visual, scene) {
+    var output = await highResolutionCanvas(visual, scene);
+    if (!output.toBlob) return dataUrlToBlob(output.toDataURL('image/png'));
     return new Promise(function (resolve, reject) {
-      target.canvas.toBlob(function (blob) {
+      output.toBlob(function (blob) {
         if (blob) resolve(blob);
         else reject(new Error('Browser could not encode the full-size PNG.'));
       }, 'image/png');
     });
   }
 
+  function jpegBytesFromCanvas(canvas) {
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+    var marker = 'data:image/jpeg;base64,';
+    if (dataUrl.indexOf(marker) !== 0) throw new Error('Browser could not generate JPEG for the PDF fallback.');
+    var binary = atob(dataUrl.slice(marker.length));
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  async function rasterPDF(visual, scene) {
+    if (!offlinePDFReady) throw new Error('The local raster PDF fallback is unavailable.');
+    var canvas = await highResolutionCanvas(visual, scene);
+    var jpeg = jpegBytesFromCanvas(canvas);
+    return window.AGASRasterPDF.create(jpeg, pixelW, pixelH, totalWIn * 72, totalHIn * 72);
+  }
+
   async function pdfDocument(visual, scene) {
-    var jsPDF = window.jspdf.jsPDF;
     var pageWPt = totalWIn * 72, pageHPt = totalHIn * 72;
-    if (pageWPt > 14380 || pageHPt > 14380) throw new Error('PDF exceeds the page size supported by this renderer.');
-    var pdf = new jsPDF({unit: 'pt', format: [pageWPt, pageHPt],
-      orientation: pageWPt >= pageHPt ? 'landscape' : 'portrait', compress: true, precision: 6});
-    var bg = hexRGB(backgroundFor(scene));
-    pdf.setFillColor(bg[0], bg[1], bg[2]);
-    pdf.rect(0, 0, pageWPt, pageHPt, 'F');
-    // Physical dimensions are in PDF points; one point is exactly 1/72 inch.
-    var marginPt = bleed * 72;
-    var widthPt = widthIn * 72, heightPt = heightIn * 72;
-    var usedVector = false;
-    if (typeof pdf.svg === 'function') {
+    if (pageWPt > 14400 || pageHPt > 14400) throw new Error('PDF exceeds the page size supported by this renderer.');
+    // Prefer vector conversion when both optional libraries have loaded.
+    if (svgReady) {
       try {
-        var svgSource = visual.toSVG();
-        var parsed = new DOMParser().parseFromString(svgSource, 'image/svg+xml');
+        var pdf = new window.jspdf.jsPDF({unit: 'pt', format: [pageWPt, pageHPt],
+          orientation: pageWPt >= pageHPt ? 'landscape' : 'portrait', compress: true, precision: 6});
+        var bg = hexRGB(backgroundFor(scene));
+        pdf.setFillColor(bg[0], bg[1], bg[2]);
+        pdf.rect(0, 0, pageWPt, pageHPt, 'F');
+        var marginPt = bleed * 72;
+        var widthPt = widthIn * 72, heightPt = heightIn * 72;
+        var parsed = new DOMParser().parseFromString(visual.toSVG(), 'image/svg+xml');
         var svgNode = parsed.documentElement;
         if (!svgNode || svgNode.nodeName.toLowerCase() !== 'svg') throw new Error('Fabric SVG invalid');
         svgNode.setAttribute('width', String(widthPt));
@@ -206,19 +226,12 @@
         svgNode.setAttribute('viewBox', '0 0 900 600');
         svgNode.setAttribute('preserveAspectRatio', 'xMidYMid meet');
         await pdf.svg(svgNode, {x: marginPt, y: marginPt, width: widthPt, height: heightPt});
-        usedVector = true;
+        return {blob: pdf.output('blob'), vector: true};
       } catch (err) {
-        console.warn('[AGAS Print] SVG-to-PDF fallback:', err);
-        usedVector = false;
+        console.warn('[AGAS Print] Vector PDF unavailable, using 150-DPI raster:', err);
       }
     }
-    if (!usedVector) {
-      var data = visual.toDataURL({format: 'png', multiplier: 3});
-      var scale = Math.min(widthPt / 900, heightPt / 600);
-      pdf.addImage(data, 'PNG', marginPt + (widthPt - 900 * scale) / 2,
-        marginPt + (heightPt - 600 * scale) / 2, 900 * scale, 600 * scale);
-    }
-    return {blob: pdf.output('blob'), vector: usedVector};
+    return {blob: await rasterPDF(visual, scene), vector: false};
   }
 
   var busy = false;
@@ -238,7 +251,7 @@
       } else {
         var pdf = await pdfDocument(loaded.canvas, loaded.scene);
         downloadBlob(pdf.blob, fileName);
-        message('Downloaded ' + fileName + ' at true physical page size with ' + (pdf.vector ? 'SVG vector rendering' : 'a raster fallback') + '. Verify fonts, bleed, and artwork before production.', false);
+        message('Downloaded ' + fileName + ' at true physical page size with ' + (pdf.vector ? 'SVG vector rendering' : 'a 150-DPI raster image') + '. Verify fonts, bleed, and artwork before production.', false);
       }
     } catch (err) {
       console.error('[AGAS Print]', err);

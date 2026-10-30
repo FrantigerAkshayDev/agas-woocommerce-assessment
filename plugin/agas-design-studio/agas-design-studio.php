@@ -10,7 +10,7 @@
 defined('ABSPATH') || exit;
 
 final class AGAS_Design_Studio {
-    const VERSION = '0.1.6';
+    const VERSION = '0.1.7';
     const REST_NS = 'agas-design/v1';
 
     public static function boot() {
@@ -783,6 +783,7 @@ public static function upgrade_logo_slots() {
         $pdf_url = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
         $svg_url = 'https://cdn.jsdelivr.net/npm/svg2pdf.js@2.8.1/dist/svg2pdf.umd.min.js';
         $print_js = plugins_url('assets/print-export.js', __FILE__);
+        $offline_pdf_js = plugins_url('assets/offline-pdf.js', __FILE__);
         $options_desc = $options['width'] . ' x ' . $options['height'] . ' ' . $options['unit'];
         $back_link = $order->get_edit_order_url();
         echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
@@ -808,6 +809,7 @@ public static function upgrade_logo_slots() {
         echo '</ul></section><section class="card" style="margin-top:18px"><h2>Export diagnostics</h2><p id="agas-print-status" aria-live="polite">Loading canvas and PDF libraries…</p><div id="agas-print-dimensions" class="muted"></div></section>';
         echo '<script type="application/json" id="agas-print-data">' . wp_json_encode($payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>';
         echo '<script src="' . esc_url($fabric_url) . '"></script><script src="' . esc_url($pdf_url) . '"></script><script src="' . esc_url($svg_url) . '"></script>';
+        echo '<script src="' . esc_url($offline_pdf_js) . '?ver=' . esc_attr(self::VERSION) . '"></script>';
         echo '<script src="' . esc_url($print_js) . '?ver=' . esc_attr(self::VERSION) . '"></script>';
         echo '</main></body></html>';
         exit;
