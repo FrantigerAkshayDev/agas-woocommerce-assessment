@@ -1530,6 +1530,8 @@ dropArea.addEventListener('drop', function (ev) {
     } else {
       message('Ready. Select an element to edit it above the canvas. Use the left icons to add content.');
     }
+    window.AGASEditorReady = true;
+    document.dispatchEvent(new CustomEvent('agas:editor-ready'));
   }
   setup().catch(function (error) { console.error('[AGAS Studio] Initialization error', error); message('Designer failed to load: ' + error.message + '. See browser Console for details.', true); });
 })();

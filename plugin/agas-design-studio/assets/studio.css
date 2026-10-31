@@ -733,3 +733,40 @@ body.admin-bar.agas-ds-app-page .agas-standalone-shell {
     min-height:0;
   }
 }
+
+/* AGAS v0.1.19: first-run, replayable, accessible editor tour. */
+.agas-designer .agas-help-actions{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex-wrap:wrap;margin-top:16px}
+.agas-designer button.agas-help-tour-start{border:0;background:#7440d8;color:#fff;font-weight:750;border-radius:9px;padding:11px 16px}
+.agas-designer button.agas-help-tour-start:hover{background:#602abc}
+.agas-tour-layer[hidden]{display:none!important}
+.agas-tour-layer{position:fixed;inset:0;z-index:2147483005;pointer-events:auto;overflow:hidden;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.agas-tour-spotlight{position:absolute;border:2px solid #ffffffee;border-radius:12px;box-shadow:0 0 0 300vmax rgba(14,21,40,.72),0 0 0 4px #b89af8;pointer-events:none;box-sizing:border-box;transition:top .18s ease,left .18s ease,width .18s ease,height .18s ease}
+.agas-tour-card{position:absolute;box-sizing:border-box;width:min(360px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:80dvh;overflow-y:auto;overscroll-behavior:contain;color:#1a2941;background:white;border:1px solid #e9e4f4;border-radius:17px;padding:19px 20px 15px;box-shadow:0 24px 80px #080d2590}
+.agas-tour-card:focus{outline:none}
+.agas-tour-card-heading{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.agas-tour-eyebrow{color:#7140cf;font-size:10px;letter-spacing:.12em;font-weight:850}
+.agas-designer .agas-tour-skip{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:#68768a;font-weight:650;font-size:12px;padding:7px 2px;min-height:32px;white-space:nowrap}
+.agas-designer .agas-tour-skip:hover{color:#40227c}
+.agas-tour-skip span{font-size:21px;line-height:0}
+.agas-tour-progress{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:5px;margin:12px 0}
+.agas-tour-progress-segment{height:4px;background:#ebe6f4;border-radius:99px}
+.agas-tour-progress-segment.is-complete{background:#7846e6}
+.agas-tour-step-number{margin:0 0 5px;font-size:11px;color:#758097;font-weight:700}
+.agas-tour-card h2{margin:0 0 8px;font-size:20px;line-height:1.22;letter-spacing:-.03em;color:#182742}
+.agas-tour-card #agas-tour-description{margin:0;color:#546174;font-size:13px;line-height:1.55}
+.agas-tour-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:17px}
+.agas-designer .agas-tour-actions button{margin:0;min-height:38px;border-radius:9px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:750}
+.agas-designer .agas-tour-back{background:#f2eff9;border:1px solid #dfd8ec;color:#50357c}
+.agas-designer .agas-tour-back:disabled{display:none}
+.agas-designer .agas-tour-next{background:#7040dc;border:1px solid #7040dc;color:#fff;margin-left:auto}
+.agas-designer .agas-tour-next:hover{background:#542caf}
+.agas-tour-shortcuts{font-size:10px;color:#8790a1;text-align:center;margin:12px 0 0}
+.agas-designer .agas-tour-card button:focus-visible{outline:3px solid #a881ed;outline-offset:2px}
+@media(max-width:620px){
+  .agas-tour-card{padding:14px 15px 12px;border-radius:12px;max-height:min(78dvh,390px)}
+  .agas-tour-card h2{font-size:17px}
+  .agas-tour-card #agas-tour-description{font-size:12px;line-height:1.48}
+  .agas-tour-actions{margin-top:12px}
+  .agas-tour-shortcuts{margin-top:9px}
+}
+@media(prefers-reduced-motion:reduce){.agas-tour-spotlight{transition:none!important}}

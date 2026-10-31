@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const php = fs.readFileSync(path.join(root, 'agas-design-studio.php'), 'utf8');
 const js = fs.readFileSync(path.join(root, 'assets/studio.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'assets/studio.css'), 'utf8');
-assert(php.includes("const VERSION = '0.1.18';"));
+assert(php.includes("const VERSION = '0.1.19';"));
 const designer = php.slice(php.indexOf('public static function designer_shortcode()'),php.indexOf('private static function pricing_rules()'));
 for(const [tab,label] of Object.entries({templates:'Templates',text:'Text',elements:'Elements',uploads:'Uploads',background:'Background',qr:'QR Code',layers:'Layers'})) {
  assert(designer.includes('data-agas-tab="'+tab+'"'),`Missing ${tab} rail tab`);

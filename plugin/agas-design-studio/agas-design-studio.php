@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AGAS Design Studio
  * Description: Custom WooCommerce template gallery, online canvas designer, and order integration.
- * Version: 0.1.18
+ * Version: 0.1.19
  * Requires Plugins: woocommerce
  * Text Domain: agas-design-studio
  */
@@ -10,7 +10,7 @@
 defined('ABSPATH') || exit;
 
 final class AGAS_Design_Studio {
-    const VERSION = '0.1.18';
+    const VERSION = '0.1.19';
     const REST_NS = 'agas-design/v1';
 
     public static function boot() {
@@ -314,6 +314,7 @@ public static function upgrade_logo_slots() {
             wp_enqueue_script('agas-qr', plugins_url('assets/vendor/agas-qrcode.js', __FILE__), array(), self::VERSION, true);
             wp_enqueue_script('agas-template-sidebar', plugins_url('assets/template-sidebar.js', __FILE__), array(), self::VERSION, true);
             wp_enqueue_script('agas-studio', plugins_url('assets/studio.js', __FILE__), array('agas-fabric', 'agas-qr', 'agas-realistic-mockups', 'agas-template-sidebar'), self::VERSION, true);
+            wp_enqueue_script('agas-editor-tour', plugins_url('assets/editor-tour.js', __FILE__), array('agas-studio'), self::VERSION, true);
         } else {
             wp_enqueue_script('agas-gallery', plugins_url('assets/gallery.js', __FILE__), array('agas-realistic-mockups'), self::VERSION, true);
         }
@@ -691,7 +692,22 @@ public static function upgrade_logo_slots() {
             </div>
             <p id="agas-dual-preview-error" class="agas-dual-preview-error" role="alert" hidden></p>
           </section>
-          <div class="agas-help-overlay" id="agas-help-overlay" hidden><section class="agas-help-dialog" role="dialog" aria-modal="true" aria-labelledby="agas-help-heading"><h2 id="agas-help-heading">Design Studio help</h2><p>Select an object to edit or drag it. Select text once to type in the left panel, or press Enter to edit on canvas. Use the side buttons to switch between front and back.</p><p>Shortcuts: Cmd/Ctrl+Z undo, Cmd/Ctrl+C copy, Cmd/Ctrl+V paste, Delete remove, arrow keys nudge. Save your work before changing templates.</p><button type="button" id="agas-help-close">Close help</button></section></div>
+          <div class="agas-help-overlay" id="agas-help-overlay" hidden><section class="agas-help-dialog" role="dialog" aria-modal="true" aria-labelledby="agas-help-heading"><h2 id="agas-help-heading">Design Studio help</h2><p>Select an object to edit or drag it. Select text once to type in the left panel, or press Enter to edit on canvas. Use the side buttons to switch between front and back.</p><p>Shortcuts: Cmd/Ctrl+Z undo, Cmd/Ctrl+C copy, Cmd/Ctrl+V paste, Delete remove, arrow keys nudge. Save your work before changing templates.</p><div class="agas-help-actions"><button type="button" id="agas-help-tour" class="agas-help-tour-start">Start guided tour</button><button type="button" id="agas-help-close">Close help</button></div></section></div>
+
+          <!-- Beginner tour is scoped to the editor and never changes/saves artwork. -->
+          <div class="agas-tour-layer" id="agas-tour-layer" hidden>
+            <div class="agas-tour-spotlight" id="agas-tour-spotlight" aria-hidden="true"></div>
+            <section class="agas-tour-card" id="agas-tour-card" role="dialog" aria-modal="true" aria-labelledby="agas-tour-title" aria-describedby="agas-tour-description" tabindex="-1">
+              <div class="agas-tour-card-heading"><span class="agas-tour-eyebrow">GETTING STARTED</span><button type="button" id="agas-tour-skip" class="agas-tour-skip" aria-label="Skip guided tour">Skip tour <span aria-hidden="true">×</span></button></div>
+              <div class="agas-tour-progress" id="agas-tour-progress" aria-label="Guided tour progress"></div>
+              <p class="agas-tour-step-number" id="agas-tour-step-number" aria-live="polite"></p>
+              <h2 id="agas-tour-title">Welcome to AGAS Design Studio</h2>
+              <p id="agas-tour-description">Learn the tools you need to customize your artwork.</p>
+              <div class="agas-tour-actions"><button type="button" id="agas-tour-back" class="agas-tour-back">Back</button><button type="button" id="agas-tour-next" class="agas-tour-next">Next <span aria-hidden="true">→</span></button></div>
+              <p class="agas-tour-shortcuts">Esc to skip · Arrow keys to navigate</p>
+            </section>
+          </div>
+
           <div class="agas-cart-choice-overlay" id="agas-cart-choice" hidden>
             <section class="agas-cart-choice-dialog" role="dialog" aria-modal="true" aria-labelledby="agas-cart-choice-title" aria-describedby="agas-cart-choice-help">
               <h2 id="agas-cart-choice-title">What would you like to do with your changes?</h2>

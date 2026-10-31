@@ -4,7 +4,7 @@ const base=path.join(__dirname,'..');
 const php=fs.readFileSync(path.join(base,'agas-design-studio.php'),'utf8');
 const script=fs.readFileSync(path.join(base,'assets','studio.js'),'utf8');
 const qr=fs.readFileSync(path.join(base,'assets','vendor','agas-qrcode.js'),'utf8');
-assert(php.includes("const VERSION = '0.1.18'"));
+assert(php.includes("const VERSION = '0.1.19'"));
 const ids=new Set([...php.matchAll(/\bid="([a-zA-Z0-9_-]+)"/g)].map(x=>x[1]));
 const refs=new Set([...script.matchAll(/\$\(['"](agas-[^'"]+)['"]\)/g)].map(x=>x[1]));
 for(const id of refs) assert(ids.has(id),'Missing editor control: '+id);

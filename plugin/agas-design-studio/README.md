@@ -1,3 +1,7 @@
+## v0.1.19 — Beginner-friendly in-editor tour
+
+See `README-UPDATE-v0.1.19.md`. Adds a first-visit nine-step spotlight walkthrough with Back, Next, Skip, Help → Replay, responsive panels, and browser-only completion memory. The tour does not change saved designs or orders.
+
 ## v0.1.18 — Logged-in mobile editor viewport fix
 
 See `README-UPDATE-v0.1.18.md`. Hides the WordPress admin toolbar in the editor only, fixes the 46px top offset and protects the Continue footer at mobile/iPad widths.

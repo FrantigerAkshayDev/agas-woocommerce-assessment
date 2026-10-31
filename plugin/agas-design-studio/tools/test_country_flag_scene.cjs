@@ -7,7 +7,7 @@ const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const code=fs.readFileSync(path.join(root,'assets/realistic-mockups.js'),'utf8');
 const php=fs.readFileSync(path.join(root,'agas-design-studio.php'),'utf8');
-assert.match(php,/const VERSION = '0\.1\.18';/);
+assert.match(php,/const VERSION = '0\.1\.19';/);
 const context={window:{},document:{},WeakMap,Promise};
 vm.runInNewContext(code,context);
 const mockups=context.window.AGASRealisticMockups;
