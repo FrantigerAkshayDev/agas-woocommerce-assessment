@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="660" viewBox="0 0 740 660" role="img" aria-label="Custom print display containing banner, flag and sign">
+<defs>
+ <filter id="shadow" x="-70%" y="-70%" width="240%" height="240%"><feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="#2b3740" flood-opacity=".20"/></filter>
+ <filter id="sm" x="-70%" y="-70%" width="240%" height="240%"><feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#263543" flood-opacity=".16"/></filter>
+ <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fffaf2"/><stop offset="1" stop-color="#f2d2ba"/></linearGradient>
+ <linearGradient id="fabric" x1="0" x2="1"><stop stop-color="#26445b"/><stop offset=".55" stop-color="#344e61"/><stop offset="1" stop-color="#162f45"/></linearGradient>
+ <linearGradient id="pole" x1="0" x2="1"><stop stop-color="#516471"/><stop offset=".5" stop-color="#dbe0df"/><stop offset="1" stop-color="#536370"/></linearGradient>
+</defs>
+<circle cx="373" cy="301" r="256" fill="#e9ebe7"/>
+<circle cx="373" cy="301" r="222" fill="none" stroke="#d5dbd8" stroke-width="1" stroke-dasharray="3 11"/>
+<ellipse cx="385" cy="589" rx="252" ry="28" fill="#25384c" opacity=".07"/>
+<g transform="translate(52 30) rotate(-8 315 240)" filter="url(#sm)">
+ <rect x="76" y="140" width="460" height="295" rx="6" fill="#f6e2d2" stroke="#fff" stroke-width="9"/>
+ <rect x="90" y="153" width="432" height="268" rx="2" fill="url(#paper)"/>
+ <rect x="90" y="153" width="432" height="29" fill="#e8795c"/>
+ <text x="309" y="208" font-family="Arial,sans-serif" font-size="17" letter-spacing="5" text-anchor="middle" fill="#d36c53" font-weight="800">MAKE SOME NOISE</text>
+ <text x="307" y="299" font-family="Arial,sans-serif" font-size="85" text-anchor="middle" fill="#203347" font-weight="900" letter-spacing="-5">HELLO!</text>
+ <text x="307" y="340" font-family="Arial,sans-serif" font-size="19" text-anchor="middle" fill="#273c4d" font-weight="800" letter-spacing="9">WE'RE OPEN</text>
+ <path d="M180 365h253" stroke="#ee8063" stroke-width="8" stroke-linecap="round"/>
+ <circle cx="100" cy="165" r="7" fill="#fff" stroke="#b3b4b8" stroke-width="4"/><circle cx="510" cy="165" r="7" fill="#fff" stroke="#b3b4b8" stroke-width="4"/>
+ <circle cx="100" cy="410" r="7" fill="#fff" stroke="#b3b4b8" stroke-width="4"/><circle cx="510" cy="410" r="7" fill="#fff" stroke="#b3b4b8" stroke-width="4"/>
+</g>
+<g transform="rotate(12 562 238)" filter="url(#shadow)">
+  <path d="M570 67v396" stroke="url(#pole)" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="570" cy="65" r="10" fill="#f69b7b"/>
+  <path d="M576 84q63-27 112 0v218q-52-21-112 11z" fill="url(#fabric)"/>
+  <path d="M576 84q59-28 112 0v35q-51-17-112 15z" fill="#f49a7b"/>
+  <path d="M576 284q60-23 112-3v20q-51-21-112 11z" fill="#c1e5e6"/>
+  <text x="634" y="199" font-family="Arial,sans-serif" text-anchor="middle" fill="#fff" font-size="23" font-weight="900">AGAS</text>
+  <path d="M580 228h102" stroke="#fff" stroke-width="2" opacity=".55"/>
+</g>
+<g transform="rotate(7 264 492)" filter="url(#shadow)">
+ <path d="M150 539v87m258-87v87" stroke="url(#pole)" stroke-width="8" stroke-linecap="round"/>
+ <rect x="71" y="374" width="424" height="194" rx="4" fill="#1d3147" stroke="#e6e9e5" stroke-width="9"/>
+ <rect x="93" y="397" width="382" height="45" fill="#f38c6b"/>
+ <text x="283" y="429" font-family="Arial,sans-serif" text-anchor="middle" fill="#1d3147" font-size="22" font-weight="900" letter-spacing="5">YOUR MESSAGE</text>
+ <text x="283" y="511" font-family="Arial,sans-serif" text-anchor="middle" fill="#fff" font-size="56" font-weight="900" letter-spacing="-2">HERE.</text>
+ <path d="M174 536h219" stroke="#f2a58a" stroke-width="5" stroke-linecap="round"/>
+</g>
+<g fill="#eb7a5c"><path d="m102 95 8 19 19 8-19 8-8 19-8-19-19-8 19-8z"/><circle cx="611" cy="517" r="12"/></g>
+<g fill="#b8d8d6"><circle cx="90" cy="312" r="12"/><path d="m548 14 5 13 14 5-14 5-5 14-5-14-13-5 13-5z"/></g>
+<g transform="translate(504 553) rotate(-15)"><rect width="121" height="41" rx="20" fill="#fff" stroke="#e8deda"/><text x="60" y="26" font-family="Arial,sans-serif" font-size="12" font-weight="800" fill="#e77756" text-anchor="middle">DESIGN IT ✳</text></g>
+</svg>

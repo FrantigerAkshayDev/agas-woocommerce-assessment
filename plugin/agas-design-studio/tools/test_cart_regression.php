@@ -60,4 +60,15 @@ AGAS_Design_Studio::order_item_meta($order_item,'flag-back',$cart->cart_contents
 check(($order_item->metadata['Sides']??'')==='Front and Back','checkout line metadata records both sides');
 check(($order_item->metadata['Print Size']??'')==='3 x 2 ft','checkout line metadata records size');
 check(!isset($GLOBALS['wc']->cart->cart_contents['nonexistent']),'unrelated cart state untouched');
+$optionMethod = new ReflectionMethod('AGAS_Design_Studio', 'clean_options');
+$priceMethod = new ReflectionMethod('AGAS_Design_Studio', 'calculate_price');
+$baseOptions = ['width'=>3,'height'=>2,'unit'=>'ft','double_sided'=>false];
+$none = $optionMethod->invoke(null, $baseOptions);
+$grommets = $optionMethod->invoke(null, $baseOptions + ['grommets'=>true]);
+$pocket = $optionMethod->invoke(null, $baseOptions + ['pole_pocket'=>true]);
+$conflict = $optionMethod->invoke(null, $baseOptions + ['grommets'=>true,'pole_pocket'=>true]);
+check(!is_wp_error($none) && $priceMethod->invoke(null,$none)===24.0,'no finishing charge added for None');
+check(!is_wp_error($grommets) && $priceMethod->invoke(null,$grommets)===29.0,'grommets only is $29');
+check(!is_wp_error($pocket) && $priceMethod->invoke(null,$pocket)===32.0,'pole pocket only is $32');
+check(is_wp_error($conflict) && $conflict->code==='conflicting_finishing','server rejects grommets and pole pocket together');
 echo "CART_REGRESSION_TESTS=PASS\n";

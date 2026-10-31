@@ -3,96 +3,114 @@
     {
       "key": "banner-grand-opening",
       "name": "Grand Opening",
-      "category": "Events"
+      "category": "Events",
+      "mockup_profile": "banner-storefront"
     },
     {
       "key": "banner-flash-sale",
       "name": "Flash Sale",
-      "category": "Sale"
+      "category": "Sale",
+      "mockup_profile": "banner-storefront"
     },
     {
       "key": "banner-music-festival",
       "name": "Music Festival",
-      "category": "Events"
+      "category": "Events",
+      "mockup_profile": "banner-event"
     },
     {
       "key": "banner-now-hiring",
       "name": "Now Hiring",
-      "category": "Business"
+      "category": "Business",
+      "mockup_profile": "banner-storefront"
     },
     {
       "key": "banner-coming-soon",
       "name": "Coming Soon",
-      "category": "Business"
+      "category": "Business",
+      "mockup_profile": "banner-storefront"
     },
     {
       "key": "banner-fundraiser",
       "name": "Community Fundraiser",
-      "category": "Community"
+      "category": "Community",
+      "mockup_profile": "banner-event"
     }
   ],
   "custom flag": [
     {
       "key": "flag-france",
       "name": "France Flag",
-      "category": "Country Flags"
+      "category": "Country Flags",
+      "mockup_profile": "flag-rectangular"
     },
     {
       "key": "flag-japan",
       "name": "Japan Flag",
-      "category": "Country Flags"
+      "category": "Country Flags",
+      "mockup_profile": "flag-rectangular"
     },
     {
       "key": "flag-italy",
       "name": "Italy Flag",
-      "category": "Country Flags"
+      "category": "Country Flags",
+      "mockup_profile": "flag-rectangular"
     },
     {
       "key": "flag-ukraine",
       "name": "Ukraine Flag",
-      "category": "Country Flags"
+      "category": "Country Flags",
+      "mockup_profile": "flag-rectangular"
     },
     {
       "key": "flag-company",
       "name": "Company Brand Flag",
-      "category": "Business"
+      "category": "Business",
+      "mockup_profile": "flag-feather"
     },
     {
       "key": "flag-event",
       "name": "Event Flag",
-      "category": "Events"
+      "category": "Events",
+      "mockup_profile": "flag-feather"
     }
   ],
   "yard sign": [
     {
       "key": "sign-open-house",
       "name": "Open House",
-      "category": "Real Estate"
+      "category": "Real Estate",
+      "mockup_profile": "sign-lawn"
     },
     {
       "key": "sign-for-sale",
       "name": "For Sale",
-      "category": "Real Estate"
+      "category": "Real Estate",
+      "mockup_profile": "sign-lawn"
     },
     {
       "key": "sign-sold",
       "name": "Sold",
-      "category": "Real Estate"
+      "category": "Real Estate",
+      "mockup_profile": "sign-lawn"
     },
     {
       "key": "sign-welcome-home",
       "name": "Welcome Home",
-      "category": "Real Estate"
+      "category": "Real Estate",
+      "mockup_profile": "sign-lawn"
     },
     {
       "key": "sign-reserved",
       "name": "Reserved Parking",
-      "category": "Directions"
+      "category": "Directions",
+      "mockup_profile": "sign-parking"
     },
     {
       "key": "sign-entrance",
       "name": "Event Entrance",
-      "category": "Events"
+      "category": "Events",
+      "mockup_profile": "sign-event"
     }
   ]
 }

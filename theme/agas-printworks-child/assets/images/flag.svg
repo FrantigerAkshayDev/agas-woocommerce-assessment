@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="580" height="450" viewBox="0 0 580 450" role="img" aria-label="Illustrated custom printed flag">
+<defs><filter id="s" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="13" stdDeviation="10" flood-color="#4c6270" flood-opacity=".21"/></filter><linearGradient id="pole" x1="0" x2="1"><stop stop-color="#50667b"/><stop offset=".4" stop-color="#f2f5f7"/><stop offset="1" stop-color="#496070"/></linearGradient><linearGradient id="cloth" x1="0" x2="1"><stop stop-color="#25445c"/><stop offset=".5" stop-color="#2c5068"/><stop offset="1" stop-color="#1d3348"/></linearGradient></defs>
+<ellipse cx="275" cy="394" rx="145" ry="20" fill="#496d78" opacity=".14"/>
+<g filter="url(#s)" transform="rotate(4 284 212)">
+<rect x="155" y="67" width="9" height="334" rx="4" fill="url(#pole)"/><circle cx="159" cy="62" r="10" fill="#eb7555"/>
+<path d="M165 86Q242 61 314 96T468 97v236q-78 30-155-1t-148 8z" fill="url(#cloth)"/>
+<path d="M165 93Q243 65 313 102T468 103v35q-77 22-155-7t-148 0z" fill="#ef785a"/>
+<path d="M165 313Q242 292 315 327T468 312v22q-74 32-153-1t-150 8z" fill="#f2ddd1"/>
+<circle cx="306" cy="213" r="66" fill="#f1e7da" opacity=".11"/>
+<text x="315" y="209" font-family="Arial,sans-serif" text-anchor="middle" font-size="35" fill="#fff" font-weight="900" letter-spacing="-1">YOUR</text>
+<text x="315" y="245" font-family="Arial,sans-serif" text-anchor="middle" font-size="37" fill="#fff" font-weight="900" letter-spacing="-1">FLAG</text>
+<path d="M164 349V405" stroke="#53697a" stroke-width="5" stroke-linecap="round"/>
+</g>
+<path d="m488 74 6 12 12 6-12 6-6 12-6-12-12-6 12-6z" fill="#efa381"/><path d="m102 283 5 9 9 5-9 5-5 9-5-9-9-5 9-5z" fill="#78b8bb"/>
+</svg>

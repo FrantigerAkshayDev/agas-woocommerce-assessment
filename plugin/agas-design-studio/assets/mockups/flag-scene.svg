@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8bbfd7"/><stop offset="1" stop-color="#e2f1f5"/></linearGradient><linearGradient id="building" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4f2e8"/><stop offset="1" stop-color="#b4b8b4"/></linearGradient></defs>
+<rect width="960" height="630" fill="url(#sky)"/>
+<g fill="#fff" opacity=".62"><ellipse cx="218" cy="117" rx="137" ry="24"/><ellipse cx="713" cy="159" rx="151" ry="23"/><ellipse cx="612" cy="106" rx="85" ry="15"/></g>
+<path d="M0 480L125 415L253 462L398 422L558 480L680 409L800 447L960 389V630H0" fill="#7c9f93" opacity=".48"/>
+<path d="M0 552L960 508V630H0" fill="#446b60" opacity=".45"/>
+<rect x="0" y="506" width="960" height="124" fill="url(#building)"/>
+<rect x="0" y="505" width="960" height="17" fill="#ecf1ef"/>
+<g fill="#829aa0" opacity=".57"><rect x="43" y="538" width="118" height="67"/><rect x="212" y="536" width="116" height="68"/><rect x="384" y="532" width="116" height="69"/><rect x="548" y="533" width="114" height="70"/><rect x="721" y="528" width="111" height="73"/></g>
+<path d="M286 630V75" stroke="#5f7481" stroke-width="10"/>
+<path d="M282 630V75" stroke="#d8e5e7" stroke-width="3"/>
+<circle cx="286" cy="68" r="14" fill="#e1d19c" stroke="#7a7763" stroke-width="4"/>
+</svg>

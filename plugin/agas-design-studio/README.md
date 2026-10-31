@@ -11,7 +11,7 @@ A custom WordPress plugin that lets customers select an editable product templat
 - Create three **published simple products** named **Outdoor Vinyl Banner**, **Custom Flag**, and **Yard Sign**. The plugin identifies the demo products by these names.
 - Enable **Cash on Delivery** under WooCommerce > Settings > Payments (including for the configured shipping method) to place test orders.
 - The plugin registers a **Design Templates** gallery and **Online Design Studio** editor page on activation and seeds six product-specific canvas templates per product after all three products exist.
-- Use a free WordPress theme. Twenty Twenty-Five works; the designer bypasses narrow theme layout using its own plugin template. If customizing a classic theme, create a child theme rather than modifying the parent.
+- Use the **free Storefront parent theme** plus our **AGAS Printworks Child v1.1.0** theme (`Template: storefront`). The designer continues to use its own fullscreen plugin template.
 
 ## Architecture
 
@@ -42,7 +42,7 @@ A custom WordPress plugin that lets customers select an editable product templat
 
 Working in observed screenshots: 3 products; original gallery; canvas editing and saving; first order; cart/checkout artwork preview; server pricing. v0.1.4–v0.1.5 introduced distinctive templates, object clipboard actions and image placeholders; browser regression testing is required. v0.1.6 added admin export code, but it too requires a real browser acceptance test.
 
-Some assessment requirements are **not yet fully met**: 10+ Google Fonts, 20+ categorized royalty-free clipart graphics, QR generator, SVG uploads, complete text alignment/letter/line spacing controls, full bleed/safety snapping workflow, sides-preview thumbnails, complete mobile QA, and a complete template-management UX. The admin can work with a template post and use the shared designer; verify the end-to-end admin create/duplicate/edit/publish flow. PDF vector fidelity and image sharpness depend on file content and browser libraries. Original image downloads currently reconstruct data embedded in the design JSON rather than maintaining a separate production asset store.
+The v0.1.11 implementation includes 12 Google Fonts, 24 categorized original vector cliparts, QR, restricted SVG uploads, richer text controls, snap/bleed/rulers and a Draft/Published admin template designer. **These newly added features still need a full Chrome/mobile WooCommerce acceptance test.** PDF vector fidelity and image sharpness depend on file content and browser libraries. Original PNG/JPG downloads reconstruct embedded JSON data; original SVG upload bytes are not separately preserved. Durable print-file storage, production preflight and complete mobile QA remain outstanding.
 
 ## Safety and deployment
 
@@ -57,7 +57,7 @@ After WooCommerce successfully creates the order, collect order ID, customer/shi
 
 ## If given five more days
 
-Complete the missing editor tools and SVG support; finish administrator template status/category/multi-product assignment workflows and previews; add render queue with durable PDF/PNG/original-file storage, object-lock rules, automated PDF preflight and source-image DPI warnings; test Chrome/Safari/mobile, order email and My Account, checkout block regressions and all supported sizes; deploy a reviewer-accessible staging site with CI and backup/restore automation.
+Harden the editor and admin template workflows with extensive mobile/accessibility tests; add render queue with durable PDF/PNG/original-file storage, automated PDF preflight and source-image DPI warnings; test Chrome/Safari/mobile, order email and My Account, checkout block regressions and all supported sizes; deploy a reviewer-accessible staging site with CI and backup/restore automation.
 
 ## v0.1.7 PDF library fallback
 
@@ -95,3 +95,32 @@ When editing an item from **Cart > Edit design**, the customer is now asked whet
 A saved separate copy can be edited further; Continue adds that new design to the cart. Cart link URLs include a cart-line key that the server verifies for replacements. The server rejects invalid action modes, missing replacement targets and attempts to use the same saved-design record as an independent cart line. See `README-UPDATE-v0.1.10.md` for the browser acceptance checklist.
 
 Mock tests: `php tools/test_cart_regression.php`, `php tools/test_cart_choice.php`, and `node tools/test_cart_choice_js.cjs`. These do **not** replace browser testing on the local WooCommerce store.
+
+## v0.1.11 - expanded designer and admin template workflow
+
+v0.1.11 adds 12 Google Fonts, rich text controls, 24 original categorized vector cliparts, offline QR generation, safe-subset SVG uploads, background-image control, front/back thumbnails, bleed/ruler/center guides, zoom dropdown and Help. WordPress admins can create templates directly in the designer, assign to products, choose Draft/Published, save front/back JSON and thumbnails, duplicate drafts and protect selected objects against deletion. See `README-UPDATE-v0.1.11.md` for the precise feature list, security limitations, QA commands, and end-to-end test steps. Version-specific limitations and browser acceptance steps are listed in `README-UPDATE-v0.1.11.md`.
+
+## v0.1.12 gallery discovery + two-view preview
+
+- Large, centered gallery search with Product and Category filters beneath it; two template cards per desktop row.
+- Click a tile to preview a banner, flag or yard-sign illustrated mockup on the gallery's left. The **Customize** action opens the selected JSON template in the existing designer.
+- Designer Preview shows a product-context mockup and the original flat canvas side-by-side, with front/back selectors when enabled. This is a display-only view and **does not change saved artwork or print exports**.
+- Original local vector scenes live at `assets/mockups/{banner,flag,sign}-scene.svg`. No paid assets or third-party mockup service is required.
+- See `README-UPDATE-v0.1.12.md` for verification and known limitations.
+
+## v0.1.13: Live photographic product mockups
+
+Gallery selection and editor Preview now show dynamically composited photographs for Banner, Flag, and Yard Sign. They use the actual chosen template/current design and never replace the flat artwork or manufacturing exports. Assets are bundled locally. See `README-UPDATE-v0.1.13.md`.
+
+### v0.1.14 — Contextual product/category mockups
+
+Photographic mockups now resolve by **physical product type plus category**, with a per-template admin override stored as `_agas_mockup_profile`. Examples: country flags use rectangular flags on poles, corporate flags use feather flags; event banners differ from storefront banners; real-estate lawn signs differ from parking-post and event-directional signs. The original Fabric.js design JSON and print/export pipeline are unchanged. Full mapping, testing and visual limitations: `README-UPDATE-v0.1.14.md`.
+
+
+## v0.1.15 — Approved country flag mockup environment
+
+The rectangular/country-flag scene now uses a natural, photographed-looking white flag outside a civic plaza with dynamic artwork compositing and preserved fabric lighting. Business feather flags are unchanged. See `README-UPDATE-v0.1.15.md`.
+
+
+## Editor workspace update (v0.1.16)
+The studio uses an icon-only insertion rail on the left and a selection-sensitive, icon-first property toolbar above the Fabric.js canvas. The product setup panel stays on the right. Add Back sits with side previews. Finishing options are mutually exclusive (None / Grommets / Pole pocket), validated on the server. See `README-UPDATE-v0.1.16.md` for mobile layout and regression checks.
