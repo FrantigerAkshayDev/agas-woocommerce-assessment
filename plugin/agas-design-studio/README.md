@@ -1,3 +1,7 @@
+## v0.1.18 — Logged-in mobile editor viewport fix
+
+See `README-UPDATE-v0.1.18.md`. Hides the WordPress admin toolbar in the editor only, fixes the 46px top offset and protects the Continue footer at mobile/iPad widths.
+
 # AGAS Design Studio — WooCommerce Skills Assessment
 
 A custom WordPress plugin that lets customers select an editable product template, personalize it with Fabric.js, and order it through WooCommerce. This is an assessment/demo project—not a production print platform.
@@ -124,3 +128,7 @@ The rectangular/country-flag scene now uses a natural, photographed-looking whit
 
 ## Editor workspace update (v0.1.16)
 The studio uses an icon-only insertion rail on the left and a selection-sensitive, icon-first property toolbar above the Fabric.js canvas. The product setup panel stays on the right. Add Back sits with side previews. Finishing options are mutually exclusive (None / Grommets / Pole pocket), validated on the server. See `README-UPDATE-v0.1.16.md` for mobile layout and regression checks.
+
+## v0.1.17 — In-editor template browser and responsive Continue
+
+The left **Templates** rail now contains a searchable/category-filtered two-column thumbnail grid (including Start from blank). It fetches only selected, published product-assigned template JSON through a read-only product-scoped REST endpoint, asks before replacing artwork, and leaves the customer in the editor. The footer now uses a bounded grid so Continue to Cart remains visible on iPad and mobile without sideways scrolling. See `README-UPDATE-v0.1.17.md` for tests, installation notes, and current limitations.

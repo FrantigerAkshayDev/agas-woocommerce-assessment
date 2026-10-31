@@ -1222,9 +1222,87 @@ dropArea.addEventListener('drop', function (ev) {
   $('agas-preview').addEventListener('click', preview);
   $('agas-preview-side-front').addEventListener('click', function(){showPreviewSide('front');});
   $('agas-preview-side-back').addEventListener('click', function(){showPreviewSide('back');});
-  $('agas-change-template').addEventListener('click', function (e) {
-    if (dirty && !window.confirm('Changing the template will discard changes that were not saved. Continue?')) e.preventDefault();
-  });
+  /** Change templates in place, without navigating away from the canvas. */
+  function mountTemplateSidebar() {
+    if (!window.AGASTemplateSidebar) return;
+    window.AGASTemplateSidebar.mount({
+      root: root,
+      templates: cfg.availableTemplates || [],
+      getCurrentId: function () {return template ? Number(template.id) : 0;},
+      onError: function (error) {message('Template unavailable: ' + (error.message || error), true);},
+      onChoose: async function (chosen) {
+        if (cfg.readonly || viewing) return false;
+        var nextId = chosen ? Number(chosen.id) : 0;
+        // Allow clearing an existing saved design even if its template ID is 0.
+        // A customer editing saved artwork should also be able to reapply the original template.
+        var currentTemplateId = template ? Number(template.id) : 0;
+        if (currentTemplateId === nextId && !dirty && !savedDesign &&
+            (nextId !== 0 || (!canvas.getObjects().length && !sides.back))) return false;
+        var warning = cfg.adminTemplateMode
+          ? 'Replace the artwork in the admin template being edited? Saving afterward will overwrite that template.'
+          : 'Replace the current artwork with this template? This changes both sides. Saved designs remain unchanged until you save.';
+        if (!window.confirm(warning)) return false;
+        var previous = {template: template, sides: sides, side: currentSide,
+          backEnabled: $('agas-two-sided').checked, dirty: dirty,
+          category: cfg.mockupCategory, profile: cfg.mockupProfile};
+        capture();
+        try {
+          var incoming = null;
+          if (nextId) {
+            var endpoint = restEndpoint('templates/' + nextId);
+            endpoint.searchParams.set('product_id', String(cfg.productId));
+            var response = await fetch(endpoint.toString(), {credentials:'same-origin', headers:{'X-WP-Nonce':cfg.nonce}});
+            incoming = await response.json().catch(function () {return {};});
+            if (!response.ok || !incoming.front || !Array.isArray(incoming.front.objects))
+              throw new Error(incoming.message || 'This template could not be loaded.');
+          }
+          // Template seed coordinates are on the standard 900x600 canvas.
+          // Reflow to the customer's currently selected print size.
+          var sx = canvas.getWidth() / 900, sy = canvas.getHeight() / 600;
+          var front = incoming ? scaledJson(incoming.front, sx, sy) : null;
+          var back = incoming && incoming.back ? scaledJson(incoming.back, sx, sy) : null;
+          var selected = incoming ? incoming : null;
+          await loadJSON(front);
+          template = selected;
+          cfg.mockupCategory = selected ? selected.category : '';
+          cfg.mockupProfile = selected ? selected.mockup_profile : '';
+          sides = {front: serializedCanvas(), back: back};
+          currentSide = 'front';
+          $('agas-two-sided').checked = !!back;
+          $('agas-side-front').classList.add('active');
+          $('agas-side-back').classList.remove('active');
+          updateSideControls();
+          $('agas-bg').value = /^#[0-9A-Fa-f]{6}$/.test(canvas.backgroundColor) ? canvas.backgroundColor : '#ffffff';
+          var header = root.querySelector('.agas-template-name');
+          if (header) header.textContent = 'Template: ' + (chosen ? chosen.name : 'Blank design');
+          resetHistory();
+          dirty = true;
+          renderTextLayers();
+          updateObjectActions();
+          scheduleSideThumbs();
+          updateRuler();quote();scheduleFit();
+          if (window.innerWidth < 1100) root.classList.remove('agas-tools-open');
+          message(chosen ? 'Loaded ' + chosen.name + '. Customize it, then Save or Continue.' : 'Blank canvas ready.');
+          return true;
+        } catch (error) {
+          template = previous.template;
+          sides = previous.sides;
+          currentSide = previous.side;
+          cfg.mockupCategory = previous.category;
+          cfg.mockupProfile = previous.profile;
+          $('agas-two-sided').checked = previous.backEnabled;
+          $('agas-side-front').classList.toggle('active', currentSide === 'front');
+          $('agas-side-back').classList.toggle('active', currentSide === 'back');
+          await loadJSON(previous.sides[currentSide]);
+          updateSideControls();
+          dirty = previous.dirty;
+          resetHistory();renderTextLayers();updateObjectActions();
+          throw error;
+        }
+      }
+    });
+  }
+
   window.addEventListener('beforeunload', function (e) {
     if (dirty) {e.preventDefault();e.returnValue = '';}
   });
@@ -1440,6 +1518,7 @@ dropArea.addEventListener('drop', function (ev) {
     $('agas-unit').dataset.previous = $('agas-unit').value;
     updateRuler();quote();resetHistory();scheduleFit();dirty = false;
     updateObjectActions();
+    mountTemplateSidebar();
     if (cfg.readonly) {
       root.classList.add('agas-readonly');
       canvas.selection = false;

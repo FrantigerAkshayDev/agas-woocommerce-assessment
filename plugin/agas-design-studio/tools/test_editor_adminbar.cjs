@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const php=fs.readFileSync(path.join(root,'agas-design-studio.php'),'utf8');
+const css=fs.readFileSync(path.join(root,'assets/studio.css'),'utf8');
+assert(php.includes("const VERSION = '0.1.18';"));
+assert(php.includes("add_filter('show_admin_bar', array(__CLASS__, 'editor_admin_bar_visibility'), 999)"));
+assert(php.includes("$editor_id && is_page($editor_id)"));
+assert(css.includes('html:has(body.agas-ds-app-page)'));
+assert(css.includes('body.agas-ds-app-page #wpadminbar'));
+assert(css.includes('height:100dvh!important'));
+assert(css.includes('min-height:0!important'));
+assert(css.includes('body.agas-ds-app-page .agas-standalone-shell .agas-designer .agas-bottombar'));
+console.log('PASS WordPress toolbar is disabled only for editor');
+console.log('PASS viewport offset and bottom-action safe layout are repaired');
+console.log('EDITOR_ADMINBAR_CONTRACT_TESTS=PASS');

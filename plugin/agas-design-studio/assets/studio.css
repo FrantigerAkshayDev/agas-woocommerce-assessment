@@ -629,3 +629,107 @@ body.admin-bar.agas-ds-app-page .agas-standalone-shell{height:calc(100dvh - 32px
  .agas-standalone-shell .agas-designer .agas-bottombar .agas-price strong {font-size:16px;margin:0;overflow:hidden;text-overflow:ellipsis}
  .agas-standalone-shell .agas-designer .agas-bottombar .agas-primary {grid-column:2;grid-row:2;min-height:39px;max-width:164px;padding:10px 10px;font-size:12px;white-space:nowrap;margin:0}
 }
+
+/* AGAS v0.1.17 — Canva-like template browsing inside the insertion sidebar. */
+.agas-standalone-shell .agas-designer #agas-panel-templates .agas-drawer-cta {
+  width:100%;border:0;cursor:pointer;text-align:left;display:flex;justify-content:center;gap:10px;
+  margin:0 0 16px;color:#fff;background:#7040dc;white-space:normal;
+}
+.agas-standalone-shell .agas-designer #agas-panel-templates .agas-drawer-cta:hover {background:#5e32bb}
+.agas-standalone-shell .agas-designer .agas-sidebar-search-label,
+.agas-standalone-shell .agas-designer .agas-sidebar-category-label {display:flex;flex-direction:column;gap:6px;margin:0 0 12px;font-size:12px;color:#334155}
+.agas-standalone-shell .agas-designer #agas-template-sidebar-search,
+.agas-standalone-shell .agas-designer #agas-template-sidebar-category {width:100%;min-height:39px;border:1px solid #dedbea;border-radius:10px;background:#fff;color:#27324a}
+.agas-standalone-shell .agas-designer .agas-sidebar-template-count {font-size:11px;color:#6c7383;margin:12px 0 9px}
+.agas-standalone-shell .agas-designer .agas-template-sidebar-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
+.agas-standalone-shell .agas-designer button.agas-sidebar-template-card {
+  width:100%;min-width:0;white-space:normal;text-align:left;display:flex;flex-direction:column;
+  padding:5px 5px 9px;margin:0;gap:4px;border-radius:10px;border:2px solid #e6e5ef;background:#fff;
+  overflow:hidden;align-items:stretch;min-height:0;
+}
+.agas-standalone-shell .agas-designer button.agas-sidebar-template-card:hover {border-color:#a18aeb;background:#faf8ff}
+.agas-standalone-shell .agas-designer button.agas-sidebar-template-card.is-selected,
+.agas-standalone-shell .agas-designer button.agas-sidebar-template-card[aria-pressed="true"] {border-color:#7342df;background:#f7f2ff}
+.agas-standalone-shell .agas-designer .agas-sidebar-template-thumb {
+  height:78px;min-height:78px;width:100%;display:flex;align-items:center;justify-content:center;
+  background:#edeaf6;border-radius:7px;overflow:hidden;color:#7040dc;font-size:28px;font-weight:800;
+}
+.agas-standalone-shell .agas-designer .agas-sidebar-template-thumb img {display:block;width:100%;height:100%;object-fit:cover}
+.agas-standalone-shell .agas-designer .agas-sidebar-template-blank {background:#faf9ff;border:1px dashed #c5b4eb}
+.agas-standalone-shell .agas-designer .agas-sidebar-template-card strong {font-size:11px;line-height:1.25;color:#28334b;overflow-wrap:anywhere}
+.agas-standalone-shell .agas-designer .agas-sidebar-template-card small {font-size:10px;line-height:1.2;color:#747c8c;overflow-wrap:anywhere}
+.agas-standalone-shell .agas-designer .agas-sidebar-template-empty {font-size:12px;color:#63718a;line-height:1.4;margin:13px 0}
+.agas-standalone-shell .agas-designer .agas-sidebar-gallery-link {display:inline-flex;font-size:11px;color:#6a3ec6;text-decoration:underline;margin:16px 0 4px}
+
+/* Keep Continue accessible without scrolling the whole footer sideways.  At
+   iPad widths the zoom, help, price and action share a bounded grid; phones
+   use two lines so that a real checkout CTA always stays on-screen. */
+@media (max-width:1100px) {
+  .agas-standalone-shell .agas-designer .agas-bottombar {
+    box-sizing:border-box;display:grid!important;width:100%;max-width:100%;min-width:0;
+    grid-template-columns:minmax(0,1fr) auto auto minmax(148px,max-content);
+    grid-template-rows:auto;gap:10px;align-items:center;
+    padding:11px 16px max(11px,env(safe-area-inset-bottom));
+    overflow:visible!important;flex-wrap:nowrap;flex:0 0 auto;
+  }
+  .agas-standalone-shell .agas-designer .agas-bottombar label:has(#agas-zoom) {grid-column:1;grid-row:1;min-width:0;max-width:100%;display:flex;margin:0}
+  .agas-standalone-shell .agas-designer .agas-bottombar label:has(#agas-guides) {display:none!important}
+  .agas-standalone-shell .agas-designer .agas-bottombar #agas-help-open {grid-column:2;grid-row:1;margin:0;min-width:0;white-space:nowrap}
+  .agas-standalone-shell .agas-designer .agas-bottombar .agas-price {grid-column:3;grid-row:1;margin:0;min-width:0;white-space:nowrap}
+  .agas-standalone-shell .agas-designer .agas-bottombar #agas-continue {
+    grid-column:4;grid-row:1;justify-self:stretch;min-width:148px;max-width:100%;
+    white-space:nowrap;padding:10px 13px;margin:0;min-height:43px;
+  }
+}
+@media (max-width:740px) {
+  .agas-standalone-shell .agas-designer .agas-bottombar {
+    grid-template-columns:minmax(0,1fr) minmax(138px,auto);
+    grid-template-rows:minmax(32px,auto) minmax(42px,auto);gap:7px 12px;
+    padding:9px 12px max(9px,env(safe-area-inset-bottom));min-height:94px;
+  }
+  .agas-standalone-shell .agas-designer .agas-bottombar label:has(#agas-zoom) {grid-column:1;grid-row:1;max-width:100%;min-width:0}
+  .agas-standalone-shell .agas-designer .agas-bottombar #agas-help-open {grid-column:2;grid-row:1;justify-self:end}
+  .agas-standalone-shell .agas-designer .agas-bottombar .agas-price {grid-column:1;grid-row:2;justify-self:start;margin:0;min-width:0}
+  .agas-standalone-shell .agas-designer .agas-bottombar #agas-continue {grid-column:2;grid-row:2;justify-self:stretch;min-width:138px;max-width:100%;font-size:12px;padding:10px 12px}
+  .agas-standalone-shell .agas-designer .agas-bottombar #agas-zoom-out {display:none}
+}
+@media (max-width:782px) {
+  body.admin-bar.agas-ds-app-page .agas-standalone-shell {height:calc(100dvh - 46px)}
+}
+
+/* AGAS v0.1.18 — fullscreen editor uses the actual visible viewport.
+ * Logged-in WordPress toolbar styles may inject html{margin-top:46px!important}
+ * even when the editor occupies 100dvh. Limit the reset to the editor page:
+ * admin navigation, Shop, Gallery, Cart and Checkout remain untouched. */
+html:has(body.agas-ds-app-page) {
+  margin-top:0!important;
+}
+body.agas-ds-app-page #wpadminbar {
+  display:none!important;
+}
+body.agas-ds-app-page,
+body.admin-bar.agas-ds-app-page {
+  margin-top:0!important;
+  overflow:hidden!important;
+}
+body.agas-ds-app-page .agas-standalone-shell,
+body.admin-bar.agas-ds-app-page .agas-standalone-shell {
+  height:100vh!important;
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+}
+/* The Continue row remains part of the editor's flex layout, not behind the
+ * browser chrome, while the canvas itself may scroll when space is limited. */
+@media (max-width:1100px) {
+  body.agas-ds-app-page .agas-standalone-shell .agas-designer .agas-bottombar {
+    flex:0 0 auto;
+    box-sizing:border-box;
+    bottom:0;
+  }
+  body.agas-ds-app-page .agas-standalone-shell .agas-designer .agas-main {
+    flex:1 1 auto;
+    min-height:0;
+  }
+}

@@ -9,7 +9,7 @@ const gallery=fs.readFileSync(path.join(base,'assets/gallery.js'),'utf8');
 const editor=fs.readFileSync(path.join(base,'assets/studio.js'),'utf8');
 const styles=fs.readFileSync(path.join(base,'assets/studio.css'),'utf8');
 const renderer=fs.readFileSync(path.join(base,'assets/realistic-mockups.js'),'utf8');
-assert.match(php,/const VERSION = '0\.1\.16';/);
+assert.match(php,/const VERSION = '0\.1\.18';/);
 assert.match(php,/agas-realistic-mockups/);
 assert.match(php,/data-mockup-photo/);
 assert.match(php,/data-mockup-kind/);

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AGAS Design Studio
  * Description: Custom WooCommerce template gallery, online canvas designer, and order integration.
- * Version: 0.1.16
+ * Version: 0.1.18
  * Requires Plugins: woocommerce
  * Text Domain: agas-design-studio
  */
@@ -10,13 +10,14 @@
 defined('ABSPATH') || exit;
 
 final class AGAS_Design_Studio {
-    const VERSION = '0.1.16';
+    const VERSION = '0.1.18';
     const REST_NS = 'agas-design/v1';
 
     public static function boot() {
         add_action('init', array(__CLASS__, 'register_types'), 5);
         add_action('init', array(__CLASS__, 'seed_once'), 99);
         add_action('init', array(__CLASS__, 'upgrade_logo_slots'), 100);
+        add_filter('show_admin_bar', array(__CLASS__, 'editor_admin_bar_visibility'), 999);
         add_action('wp_enqueue_scripts', array(__CLASS__, 'enqueue_page_assets'));
         add_filter('template_include', array(__CLASS__, 'standalone_page_template'), 99);
         add_shortcode('agas_template_gallery', array(__CLASS__, 'gallery_shortcode'));
@@ -274,6 +275,16 @@ public static function upgrade_logo_slots() {
      * Use a plugin-owned template to bypass block-theme constrained widths.
      * This affects only the two plugin-created pages.
      */
+    /**
+     * The logged-in WordPress toolbar is not part of the fullscreen editor.
+     * Hide it ONLY on the Design Studio page; retain it on the storefront,
+     * gallery, and all wp-admin screens.
+     */
+    public static function editor_admin_bar_visibility($show) {
+        $editor_id = absint(get_option('agas_ds_editor_page'));
+        return ($editor_id && is_page($editor_id)) ? false : $show;
+    }
+
     public static function standalone_page_template($theme_template) {
         $gallery_id = absint(get_option('agas_ds_gallery_page'));
         $editor_id = absint(get_option('agas_ds_editor_page'));
@@ -301,7 +312,8 @@ public static function upgrade_logo_slots() {
             wp_enqueue_script('agas-fabric', 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js', array(), '5.3.1', true);
             wp_enqueue_style('agas-google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Oswald:wght@400;700&family=Merriweather:wght@400;700&family=Raleway:wght@400;700&family=Nunito:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Sans+3:wght@400;700&display=swap', array(), null);
             wp_enqueue_script('agas-qr', plugins_url('assets/vendor/agas-qrcode.js', __FILE__), array(), self::VERSION, true);
-            wp_enqueue_script('agas-studio', plugins_url('assets/studio.js', __FILE__), array('agas-fabric', 'agas-qr', 'agas-realistic-mockups'), self::VERSION, true);
+            wp_enqueue_script('agas-template-sidebar', plugins_url('assets/template-sidebar.js', __FILE__), array(), self::VERSION, true);
+            wp_enqueue_script('agas-studio', plugins_url('assets/studio.js', __FILE__), array('agas-fabric', 'agas-qr', 'agas-realistic-mockups', 'agas-template-sidebar'), self::VERSION, true);
         } else {
             wp_enqueue_script('agas-gallery', plugins_url('assets/gallery.js', __FILE__), array('agas-realistic-mockups'), self::VERSION, true);
         }
@@ -506,6 +518,23 @@ public static function upgrade_logo_slots() {
         if (!self::is_designable($product_id)) return '<p>Choose one of the three assessment products.</p>';
         if ($template_id && !self::template_belongs($template_id, $product_id)) return '<p>This template is not available for this product.</p>';
         $template = $template_id ? self::template_data(get_post($template_id)) : null;
+        // The editor sidebar loads metadata only; canvas JSON is fetched on selection.
+        // Do not expose drafts or templates assigned to a different product.
+        $available_templates = array();
+        $published = get_posts(array('post_type' => 'agas_template', 'post_status' => 'publish',
+            'numberposts' => 200, 'orderby' => 'title', 'order' => 'ASC'));
+        foreach ($published as $candidate) {
+            if (!self::template_belongs($candidate->ID, $product_id)
+                || get_post_meta($candidate->ID, '_agas_legacy_hidden', true)) continue;
+            $terms = wp_get_post_terms($candidate->ID, 'agas_template_category', array('fields' => 'names'));
+            $parts = explode(' - ', $candidate->post_title, 2);
+            $available_templates[] = array(
+                'id' => (int) $candidate->ID,
+                'name' => count($parts) === 2 ? $parts[1] : $candidate->post_title,
+                'category' => !is_wp_error($terms) && $terms ? $terms[0] : 'Other',
+                'thumbnail' => self::template_thumbnail($candidate->ID),
+            );
+        }
         $product_kind = self::mockup_kind($products[$product_id]);
         $mockup_profile = self::resolved_mockup_profile($product_kind, $template['category'] ?? '', $template['name'] ?? '', $template['mockup_profile'] ?? '');
         $loaded_design = null;
@@ -534,6 +563,7 @@ public static function upgrade_logo_slots() {
             'mockupProfile' => $mockup_profile,
             'mockupBase' => plugins_url('assets/mockups/photos/', __FILE__),
             'template' => $template,
+            'availableTemplates' => $available_templates,
             'editingTemplate' => $editing_template,
             'adminTemplateMode' => (bool) $admin_template_mode,
             'loadedDesign' => $loaded_design,
@@ -565,9 +595,17 @@ public static function upgrade_logo_slots() {
                 <button type="button" class="agas-rail-tab" data-agas-tab="templates" role="tab" aria-controls="agas-panel-templates" aria-selected="false" aria-label="Templates" title="Templates"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span class="agas-visually-hidden">Templates</span></button><button type="button" class="agas-rail-tab is-active" data-agas-tab="text" role="tab" aria-controls="agas-panel-text" aria-selected="true" aria-label="Text" title="Text"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3M12 4v16M8 20h8"/></svg><span class="agas-visually-hidden">Text</span></button><button type="button" class="agas-rail-tab" data-agas-tab="elements" role="tab" aria-controls="agas-panel-elements" aria-selected="false" aria-label="Elements" title="Elements"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="9" height="9" rx="1"/><circle cx="17" cy="17" r="4"/><path d="M4 20l6-6"/></svg><span class="agas-visually-hidden">Elements</span></button><button type="button" class="agas-rail-tab" data-agas-tab="uploads" role="tab" aria-controls="agas-panel-uploads" aria-selected="false" aria-label="Uploads" title="Uploads"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m0 0-5 5m5-5 5 5M4 16v4h16v-4"/></svg><span class="agas-visually-hidden">Uploads</span></button><button type="button" class="agas-rail-tab" data-agas-tab="background" role="tab" aria-controls="agas-panel-background" aria-selected="false" aria-label="Background" title="Background"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="7.5" cy="12" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="16" cy="8.5" r="1"/><path d="M13 21c-2 0-2-3 0-4 2-1 6 1 7-3"/></svg><span class="agas-visually-hidden">Background</span></button><button type="button" class="agas-rail-tab" data-agas-tab="qr" role="tab" aria-controls="agas-panel-qr" aria-selected="false" aria-label="QR Code" title="QR Code"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM15 15v2h2M20 14v3h-2M14 20h3M20 20h1"/></svg><span class="agas-visually-hidden">QR Code</span></button><button type="button" class="agas-rail-tab" data-agas-tab="layers" role="tab" aria-controls="agas-panel-layers" aria-selected="false" aria-label="Layers" title="Layers"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg><span class="agas-visually-hidden">Layers</span></button>
               </nav>
               <aside class="agas-tools" aria-label="Selected insertion tools">
-                <section class="agas-tool-panel" id="agas-panel-templates" role="tabpanel" aria-label="Design templates" hidden><div class="agas-panel-top"><h3>Design templates</h3><button type="button" class="agas-drawer-dismiss agas-icon-button" aria-label="Close tool panel" title="Close tool panel"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><p class="agas-drawer-description">Explore ready-made designs for this product. Save your changes before switching templates.</p>
-                    <a class="agas-drawer-cta" id="agas-change-template" href="<?php echo esc_url(self::gallery_url($product_id)); ?>"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>Browse templates<svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
-                    <p class="agas-hint">Choose a new template or start with a blank canvas from the gallery.</p></section>
+                <section class="agas-tool-panel" id="agas-panel-templates" role="tabpanel" aria-label="Design templates" hidden>
+                  <div class="agas-panel-top"><h3>Design templates</h3><button type="button" class="agas-drawer-dismiss agas-icon-button" aria-label="Close tool panel" title="Close tool panel"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+                  <p class="agas-drawer-description">Choose a new design without leaving the editor. Switching replaces the canvas artwork; you will be asked first.</p>
+                  <button type="button" class="agas-drawer-cta" id="agas-change-template" aria-controls="agas-template-sidebar-grid"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg> Browse templates</button>
+                  <label class="agas-sidebar-search-label" for="agas-template-sidebar-search">Search designs<input type="search" id="agas-template-sidebar-search" autocomplete="off" placeholder="Search templates..." aria-controls="agas-template-sidebar-grid"></label>
+                  <label class="agas-sidebar-category-label" for="agas-template-sidebar-category">Category<select id="agas-template-sidebar-category" aria-label="Filter sidebar templates by category"><option value="">All categories</option></select></label>
+                  <p class="agas-sidebar-template-count" id="agas-template-sidebar-count" role="status" aria-live="polite"></p>
+                  <div id="agas-template-sidebar-grid" class="agas-template-sidebar-grid" aria-label="Available design templates"></div>
+                  <p class="agas-sidebar-template-empty" id="agas-template-sidebar-empty" hidden>No matching templates. Try a different search or category.</p>
+                  <a class="agas-sidebar-gallery-link" href="<?php echo esc_url(self::gallery_url($product_id)); ?>">Open full gallery</a>
+                </section>
                 <section class="agas-tool-panel" id="agas-panel-text" role="tabpanel" aria-label="Add text" ><div class="agas-panel-top"><h3>Add text</h3><button type="button" class="agas-drawer-dismiss agas-icon-button" aria-label="Close tool panel" title="Close tool panel"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><p class="agas-drawer-description">Add a text element, then select it on the canvas to adjust its properties above.</p>
                     <div class="agas-insert-list"><button type="button" id="agas-add-heading" class="agas-add-heading"><span class="agas-add-type">Aa</span><span>Heading</span></button><button type="button" id="agas-add-subheading"><span class="agas-add-type">T</span><span>Subheading</span></button><button type="button" id="agas-add-body"><span class="agas-add-type">Tt</span><span>Body text</span></button></div></section>
                 <section class="agas-tool-panel" id="agas-panel-elements" role="tabpanel" aria-label="Elements &amp; graphics" hidden><div class="agas-panel-top"><h3>Elements &amp; graphics</h3><button type="button" class="agas-drawer-dismiss agas-icon-button" aria-label="Close tool panel" title="Close tool panel"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="agas-panel-section"><label>Basic shapes</label><div class="agas-shape-buttons"><button type="button" id="agas-add-rect">▭ <span>Rectangle</span></button><button type="button" id="agas-add-circle">◯ <span>Circle</span></button><button type="button" id="agas-add-star">☆ <span>Star</span></button></div></div>
@@ -714,6 +752,22 @@ public static function upgrade_logo_slots() {
         }));
         register_rest_route(self::REST_NS, '/designs', array('methods' => WP_REST_Server::CREATABLE, 'permission_callback' => '__return_true', 'callback' => array(__CLASS__, 'save_design')));
         register_rest_route(self::REST_NS, '/templates', array('methods' => WP_REST_Server::CREATABLE, 'permission_callback' => function() { return current_user_can('manage_woocommerce'); }, 'callback' => array(__CLASS__, 'save_template')));
+        register_rest_route(self::REST_NS, '/templates/(?P<id>\d+)', array('methods' => WP_REST_Server::READABLE,
+            'permission_callback' => '__return_true', 'callback' => array(__CLASS__, 'fetch_editor_template')));
+    }
+
+    /** Read only published, product-assigned template artwork for the in-editor sidebar. */
+    public static function fetch_editor_template($request) {
+        $id = absint($request['id']);
+        $product_id = absint($request->get_param('product_id'));
+        $post = get_post($id);
+        if (!$post || $post->post_type !== 'agas_template' || $post->post_status !== 'publish'
+            || !$product_id || !self::is_designable($product_id)
+            || !self::template_belongs($id, $product_id)
+            || get_post_meta($id, '_agas_legacy_hidden', true)) {
+            return new WP_Error('template_unavailable', 'Template not available for this product.', array('status' => 404));
+        }
+        return rest_ensure_response(self::template_data($post));
     }
 
     private static function valid_canvas($canvas) {
