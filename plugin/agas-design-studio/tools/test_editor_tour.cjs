@@ -7,7 +7,8 @@ const php=fs.readFileSync(path.join(base,'agas-design-studio.php'),'utf8');
 const script=fs.readFileSync(path.join(base,'assets/editor-tour.js'),'utf8');
 const studio=fs.readFileSync(path.join(base,'assets/studio.js'),'utf8');
 const css=fs.readFileSync(path.join(base,'assets/studio.css'),'utf8');
-assert(php.includes("const VERSION = '0.1.19';"));
+const pluginHeaderVersion = php.match(/\* Version:\s*([0-9]+\.[0-9]+\.[0-9]+)/)?.[1];
+assert(pluginHeaderVersion && php.includes(`const VERSION = '${pluginHeaderVersion}';`));
 assert(php.includes("wp_enqueue_script('agas-editor-tour', plugins_url('assets/editor-tour.js', __FILE__), array('agas-studio')"));
 for(const id of ['agas-help-tour','agas-tour-layer','agas-tour-card','agas-tour-spotlight','agas-tour-next','agas-tour-back','agas-tour-skip','agas-tour-step-number','agas-tour-progress','agas-tour-title','agas-tour-description']) {
  assert(php.includes('id="'+id+'"'), 'Missing required tour markup '+id);

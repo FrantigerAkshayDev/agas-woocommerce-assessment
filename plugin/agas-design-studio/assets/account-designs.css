@@ -1,0 +1,70 @@
+/* AGAS v0.1.20: WooCommerce My Account > My Designs. Scoped to the account views. */
+.agas-account-designs,
+.agas-account-dashboard-link {
+  --agas-account-ink: #172b43;
+  --agas-account-muted: #65748a;
+  --agas-account-accent: #6937ec;
+  --agas-account-border: #e4e8f0;
+  color: var(--agas-account-ink);
+  font-family: inherit;
+}
+.agas-account-designs *, .agas-account-dashboard-link * { box-sizing: border-box; }
+.agas-account-designs { width: 100%; max-width: 1100px; margin: 0 auto; }
+.agas-account-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 26px; }
+.agas-account-heading h2 { margin: 5px 0 7px; color: var(--agas-account-ink); font-size: clamp(26px, 3vw, 34px); line-height: 1.17; font-weight: 750; letter-spacing: -0.04em; }
+.agas-account-heading p { margin: 0; color: var(--agas-account-muted); font-size: 14px; line-height: 1.55; }
+.agas-account-eyebrow { letter-spacing: .12em; font-size: 10px; font-weight: 800; color: var(--agas-account-accent); }
+.agas-account-create, .agas-account-edit, .agas-account-filter-submit { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; border: 0; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.agas-account-create { background: var(--agas-account-accent); color: #fff !important; padding: 13px 16px; border-radius: 12px; font-size: 13px; min-height: 44px; box-shadow: 0 6px 16px rgba(105,55,236,.16); }
+.agas-account-create:hover, .agas-account-create:focus-visible { background: #542bc7; color: #fff !important; }
+.agas-account-filters { background: #f7f8fd; border: 1px solid var(--agas-account-border); padding: 16px; border-radius: 17px; display: grid; grid-template-columns: minmax(180px,2fr) minmax(145px,1.25fr) minmax(145px,1fr) auto; gap: 12px; align-items: end; }
+.agas-account-field { display: block; min-width: 0; margin: 0; }
+.agas-account-field > span { display: block; margin-bottom: 7px; font-weight: 700; font-size: 11px; color: var(--agas-account-muted); }
+.agas-account-field input, .agas-account-field select { width: 100%; min-width: 0; height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #d9deea; color: var(--agas-account-ink); background: #fff; font: inherit; font-size: 13px; box-shadow: none; }
+.agas-account-field input:focus, .agas-account-field select:focus { border-color: var(--agas-account-accent); outline: 2px solid rgba(105,55,236,.2); outline-offset: 1px; }
+.agas-account-filter-submit { min-height: 44px; background: #172b43; color: #fff; padding: 0 18px; border-radius: 10px; font-size: 13px; }
+.agas-account-filter-submit:hover { background: #304866; color: #fff; }
+.agas-account-count { color: var(--agas-account-muted); font-size: 12px; margin: 18px 0 14px; }
+.agas-account-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.agas-account-card { background: #fff; border: 1px solid var(--agas-account-border); border-radius: 17px; overflow: hidden; min-width: 0; box-shadow: 0 5px 22px rgba(20,39,67,.035); transition: box-shadow .18s, transform .18s; }
+.agas-account-card:hover { box-shadow: 0 10px 28px rgba(20,39,67,.11); transform: translateY(-2px); }
+.agas-account-card-image { position: relative; aspect-ratio: 16 / 10; min-height: 175px; background: #f1f4f9; display: flex; align-items: stretch; justify-content: center; border-bottom: 1px solid var(--agas-account-border); }
+.agas-account-preview-button { background: transparent; border: 0; cursor: zoom-in; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 19px 20px 28px; position: relative; }
+.agas-account-preview-button img { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; box-shadow: 0 4px 14px rgba(20,39,67,.1); }
+.agas-account-image-hint { position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: #394960; background: rgba(255,255,255,.87); padding: 4px 9px; border-radius: 7px; }
+.agas-account-card-empty { color: #8997ae; display: flex; gap: 10px; flex-direction: column; align-items: center; justify-content: center; width: 100%; font-size: 12px; padding: 20px; }
+.agas-account-side-badge { position: absolute; top: 12px; right: 12px; background: #fff; color: #3d2c8b; box-shadow: 0 2px 7px rgba(40,30,100,.1); border-radius: 99px; padding: 6px 10px; font-size: 10px; font-weight: 750; }
+.agas-account-card-info { padding: 18px; }
+.agas-account-card-product { font-size: 11px; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; color: var(--agas-account-accent); }
+.agas-account-card-info h3 { margin: 7px 0; font-size: 18px; line-height: 1.25; font-weight: 750; color: var(--agas-account-ink); overflow-wrap: anywhere; }
+.agas-account-card-meta { font-size: 12px; line-height: 1.5; margin: 0 0 17px; color: var(--agas-account-muted); }
+.agas-account-edit { display: inline-flex; min-height: 42px; width: 100%; justify-content: space-between; border: 1px solid #d6ccfc; border-radius: 10px; background: #f5f1ff; color: #5830cb !important; padding: 10px 13px; font-size: 13px; }
+.agas-account-edit:hover { background: #e9e1ff; color: #3e20a3 !important; }
+.agas-account-unavailable { font-size: 12px; color: #a73b45; margin-bottom: 0; }
+.agas-account-pagination { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; font-size: 13px; color: var(--agas-account-muted); }
+.agas-account-pagination a { display: inline-flex; align-items: center; border-radius: 10px; padding: 9px 13px; background: #f5f1ff; color: #532fc2; text-decoration: none; font-weight: 700; }
+.agas-account-pagination a:hover { background: #e8dfff; }
+.agas-account-empty { border: 1px dashed #cfc8eb; border-radius: 18px; padding: 48px 20px; margin-top: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; background: #fbfaff; }
+.agas-account-empty svg { color: #a69acb; }
+.agas-account-empty h3 { margin: 18px 0 7px; color: var(--agas-account-ink); font-weight: 750; }
+.agas-account-empty p { margin: 0 0 16px; font-size: 13px; color: var(--agas-account-muted); }
+.agas-account-empty a { padding: 11px 16px; border-radius: 11px; background: var(--agas-account-accent); color: #fff !important; font-size: 13px; text-decoration: none; font-weight: 750; }
+.agas-account-guest-note { font-size: 11px; color: var(--agas-account-muted); line-height: 1.5; margin: 23px 0 0; }
+.agas-account-modal { position: fixed; inset: 0; padding: 0; max-width: min(92vw, 900px); max-height: min(88dvh, 900px); border-radius: 16px; border: 0; box-shadow: 0 15px 80px rgba(0,0,0,.25); background: #fff; color: #172b43; }
+.agas-account-modal::backdrop { background: rgba(13,23,43,.72); }
+.agas-account-modal-inner { max-height: min(88dvh,900px); display: flex; flex-direction: column; padding: 16px 20px; }
+.agas-account-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 13px; }
+.agas-account-modal-head strong { font-size: 17px; }
+.agas-account-modal-close { border: 1px solid #e0e3eb; color: #172b43; border-radius: 9px; background: #f3f5fb; width: 38px; height: 38px; cursor: pointer; font-size: 25px; }
+.agas-account-modal img { display: block; object-fit: contain; max-width: 100%; min-height: 0; max-height: 68dvh; margin: 0 auto; }
+.agas-account-modal p { color: #65748a; text-align: center; font-size: 12px; margin: 12px 0 0; }
+.agas-account-dashboard-link { margin: 25px 0; border: 1px solid #e2def1; border-radius: 14px; background: #f9f7ff; display: flex; align-items: center; gap: 14px; padding: 17px; }
+.agas-account-dashboard-icon { display: flex; align-items: center; justify-content: center; border-radius: 13px; background: #eae2ff; color: #6235de; width: 48px; min-width: 48px; height: 48px; }
+.agas-account-dashboard-link > div { flex: 1; min-width: 0; }
+.agas-account-dashboard-link strong { font-size: 15px; color: #172b43; }
+.agas-account-dashboard-link p { margin: 4px 0 0; color: #65748a; font-size: 12px; }
+.agas-account-dashboard-link > a { color: #5e35d5; text-decoration: none; white-space: nowrap; font-size: 12px; font-weight: 750; }
+.woocommerce-MyAccount-navigation-link--my-designs.is-active a { color: #6036ce; font-weight: 750; }
+@media (max-width: 1100px) { .agas-account-filters { grid-template-columns: repeat(2, minmax(0,1fr)); } .agas-account-filter-submit { width: 100%; } }
+@media (max-width: 650px) { .agas-account-heading { flex-direction: column; align-items: flex-start; } .agas-account-create { width: 100%; } .agas-account-filters { grid-template-columns: 1fr; } .agas-account-grid { grid-template-columns: 1fr; } .agas-account-card-image { min-height: 195px; } .agas-account-dashboard-link { flex-wrap: wrap; } .agas-account-dashboard-link > a { margin-left: 62px; } }
+@media (prefers-reduced-motion: reduce) { .agas-account-card { transition: none; } }

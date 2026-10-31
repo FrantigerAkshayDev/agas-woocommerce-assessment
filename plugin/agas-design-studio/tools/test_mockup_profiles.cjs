@@ -12,7 +12,8 @@ const dom={createElement(){throw Error('Unexpected canvas creation during routin
 const context={document:dom,window:{},WeakMap,Promise};
 vm.runInNewContext(code,context);
 const R=context.window.AGASRealisticMockups;
-assert.match(php,/const VERSION = '0\.1\.19';/);
+const pluginHeaderVersion = php.match(/\* Version:\s*([0-9]+\.[0-9]+\.[0-9]+)/)?.[1];
+assert(pluginHeaderVersion && php.includes(`const VERSION = '${pluginHeaderVersion}';`));
 assert.match(php,/_agas_mockup_profile/);
 assert.match(php,/data-mockup-profile/);
 assert.match(php,/agas-template-mockup/);

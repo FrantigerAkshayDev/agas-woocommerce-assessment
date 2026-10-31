@@ -3,7 +3,8 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),path=require('n
 const root=path.resolve(__dirname,'..');
 const php=fs.readFileSync(path.join(root,'agas-design-studio.php'),'utf8');
 const css=fs.readFileSync(path.join(root,'assets/studio.css'),'utf8');
-assert(php.includes("const VERSION = '0.1.19';"));
+const pluginHeaderVersion = php.match(/\* Version:\s*([0-9]+\.[0-9]+\.[0-9]+)/)?.[1];
+assert(pluginHeaderVersion && php.includes(`const VERSION = '${pluginHeaderVersion}';`));
 assert(php.includes("add_filter('show_admin_bar', array(__CLASS__, 'editor_admin_bar_visibility'), 999)"));
 assert(php.includes("$editor_id && is_page($editor_id)"));
 assert(css.includes('html:has(body.agas-ds-app-page)'));

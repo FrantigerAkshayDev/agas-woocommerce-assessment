@@ -1,6 +1,6 @@
-## v0.1.19 — Beginner-friendly in-editor tour
+## v0.1.20 - My Designs inside WooCommerce My Account
 
-See `README-UPDATE-v0.1.19.md`. Adds a first-visit nine-step spotlight walkthrough with Back, Next, Skip, Help → Replay, responsive panels, and browser-only completion memory. The tour does not change saved designs or orders.
+The My Account menu now includes a dedicated **My Designs** tab after Orders. Authenticated customers see private saved artwork with previews, product information, sizes, sides, filters, sorting, pagination, and Edit design links. Guest saves remain available through their original private links. This is not a production-grade private file store. See `README-UPDATE-v0.1.20.md`.
 
 ## v0.1.18 — Logged-in mobile editor viewport fix
 

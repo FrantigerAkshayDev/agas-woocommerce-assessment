@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AGAS Design Studio
  * Description: Custom WooCommerce template gallery, online canvas designer, and order integration.
- * Version: 0.1.19
+ * Version: 0.1.20
  * Requires Plugins: woocommerce
  * Text Domain: agas-design-studio
  */
@@ -10,13 +10,17 @@
 defined('ABSPATH') || exit;
 
 final class AGAS_Design_Studio {
-    const VERSION = '0.1.19';
+    const VERSION = '0.1.20';
     const REST_NS = 'agas-design/v1';
+    const ACCOUNT_ENDPOINT = 'my-designs';
+    const ACCOUNT_REWRITE_REV = 'account-v1';
 
     public static function boot() {
         add_action('init', array(__CLASS__, 'register_types'), 5);
         add_action('init', array(__CLASS__, 'seed_once'), 99);
         add_action('init', array(__CLASS__, 'upgrade_logo_slots'), 100);
+        add_action('init', array(__CLASS__, 'register_account_endpoint'), 9);
+        add_action('init', array(__CLASS__, 'maybe_flush_account_endpoint'), 110);
         add_filter('show_admin_bar', array(__CLASS__, 'editor_admin_bar_visibility'), 999);
         add_action('wp_enqueue_scripts', array(__CLASS__, 'enqueue_page_assets'));
         add_filter('template_include', array(__CLASS__, 'standalone_page_template'), 99);
@@ -48,11 +52,15 @@ final class AGAS_Design_Studio {
         add_filter('post_row_actions', array(__CLASS__, 'template_row_actions'), 10, 2);
         add_filter('manage_agas_template_posts_columns', array(__CLASS__, 'template_list_columns'));
         add_action('manage_agas_template_posts_custom_column', array(__CLASS__, 'template_list_cell'), 10, 2);
-        add_filter('the_content', array(__CLASS__, 'account_designs_content'));
+        add_filter('woocommerce_account_menu_items', array(__CLASS__, 'account_menu_items'), 20);
+        add_action('woocommerce_account_my-designs_endpoint', array(__CLASS__, 'account_designs_page'));
+        add_action('woocommerce_account_dashboard', array(__CLASS__, 'account_dashboard_designs'), 30);
     }
 
     public static function activate() {
         self::register_types();
+        self::register_account_endpoint();
+        update_option('agas_ds_account_rewrite_rev', self::ACCOUNT_REWRITE_REV);
         self::create_page('agas-templates', 'Design Templates', '[agas_template_gallery]', 'agas_ds_gallery_page');
         self::create_page('design-studio', 'Online Design Studio', '[agas_designer]', 'agas_ds_editor_page');
         update_option('agas_ds_seed_needed', 'yes');
@@ -302,6 +310,10 @@ public static function upgrade_logo_slots() {
         elseif ($gallery_id && is_page($gallery_id)) self::enqueue_assets(false);
         elseif (function_exists('is_cart') && is_cart()) {
             wp_enqueue_style('agas-design-studio', plugins_url('assets/studio.css', __FILE__), array(), self::VERSION);
+        }
+        if (function_exists('is_account_page') && is_account_page()) {
+            wp_enqueue_style('agas-account-designs', plugins_url('assets/account-designs.css', __FILE__), array(), self::VERSION);
+            wp_enqueue_script('agas-account-designs', plugins_url('assets/account-designs.js', __FILE__), array(), self::VERSION, true);
         }
     }
 
@@ -583,7 +595,7 @@ public static function upgrade_logo_slots() {
           <header class="agas-topbar">
             <a class="agas-logo" href="<?php echo esc_url(self::gallery_url($product_id)); ?>">AGAS<span> DESIGN STUDIO</span></a>
             <div class="agas-design-context"><strong id="agas-product-name"><?php echo esc_html($products[$product_id]); ?></strong><span class="agas-template-name">Template: <?php echo esc_html($template ? preg_replace('/^.*? - /', '', $template['name']) : 'Blank design'); ?></span></div>
-<nav class="agas-top-actions" aria-label="Editor commands"><?php if (!empty($_GET['agas_from_cart'])) : ?><a class="agas-back-to-cart" href="<?php echo esc_url(wc_get_cart_url()); ?>">Back to cart</a><?php endif; ?>
+<nav class="agas-top-actions" aria-label="Editor commands"><?php if (!empty($_GET['agas_from_cart'])) : ?><a class="agas-back-to-cart" href="<?php echo esc_url(wc_get_cart_url()); ?>">Back to cart</a><?php elseif (!empty($_GET['agas_from_account']) && $design_id && function_exists('wc_get_account_endpoint_url')) : ?><a class="agas-back-to-cart" href="<?php echo esc_url(wc_get_account_endpoint_url(self::ACCOUNT_ENDPOINT)); ?>">My Designs</a><?php endif; ?>
               <button type="button" id="agas-undo" class="agas-icon-button" title="Undo (Ctrl/Command+Z)" aria-label="Undo (Ctrl/Command+Z)" ><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2"/></svg></button><button type="button" id="agas-redo" class="agas-icon-button" title="Redo (Ctrl/Command+Y)" aria-label="Redo (Ctrl/Command+Y)" ><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5m5 5H10a6 6 0 0 0 0 12h2"/></svg></button>
               <button type="button" class="agas-header-action" id="agas-save"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h14l3 3v15H3V3zM7 3v7h10V3M7 21v-8h10v8"/></svg><span>Save</span></button>
               <button type="button" class="agas-header-action agas-header-preview" id="agas-preview"><svg class="agas-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>Preview</span></button>
@@ -843,6 +855,9 @@ public static function upgrade_logo_slots() {
         update_post_meta($id, '_agas_back', wp_json_encode($opts['double_sided'] ? $back : null));
         $preview = self::save_preview($params['preview'] ?? '', $id);
         if ($preview) update_post_meta($id, '_agas_preview', esc_url_raw($preview));
+        // Updating post metadata alone does not refresh post_modified.
+        // Touch the existing design so My Account sorts by the actual last save.
+        if ($existing_id) wp_update_post(array('ID' => $id));
         return rest_ensure_response(array('id' => $id, 'token' => $token,
             'edit_url' => self::editor_url($product_id, $template_id, array('agas_design' => $id, 'agas_token' => $token)),
             'price' => self::calculate_price($opts), 'preview' => (string) get_post_meta($id, '_agas_preview', true)));
@@ -1454,20 +1469,226 @@ public static function upgrade_logo_slots() {
         wp_safe_redirect(get_edit_post_link($copy, '')); exit;
     }
 
-    public static function account_designs_content($content) {
-        if (!function_exists('is_account_page') || !is_account_page() || !is_user_logged_in() || !in_the_loop() || !is_main_query()) return $content;
-        $posts = get_posts(array('post_type' => 'agas_design', 'post_status' => 'private', 'author' => get_current_user_id(), 'numberposts' => 30));
-        if (!$posts) return $content;
-        $block = '<section class="agas-my-designs"><h3>My Designs</h3><ul>';
-        foreach ($posts as $post) {
-            $product_id = (int) get_post_meta($post->ID, '_agas_product_id', true);
-            $template_id = (int) get_post_meta($post->ID, '_agas_template_id', true);
-            $url = self::editor_url($product_id, $template_id, array('agas_design' => $post->ID));
-            $block .= '<li><a href="' . esc_url($url) . '">Design #' . absint($post->ID) . ' - ' . esc_html(get_the_title($product_id)) . '</a></li>';
-        }
-        $block .= '</ul></section>';
-        return $content . $block;
+    /** My Designs lives within WooCommerce's normal My Account navigation. */
+    public static function register_account_endpoint() {
+        add_rewrite_endpoint(self::ACCOUNT_ENDPOINT, EP_ROOT | EP_PAGES);
     }
+
+    /** Flush once on upgrade so /my-account/my-designs/ works without a manual permalink save. */
+    public static function maybe_flush_account_endpoint() {
+        if (get_option('agas_ds_account_rewrite_rev') === self::ACCOUNT_REWRITE_REV) return;
+        flush_rewrite_rules(false);
+        update_option('agas_ds_account_rewrite_rev', self::ACCOUNT_REWRITE_REV);
+    }
+
+    public static function account_menu_items($items) {
+        if (!is_array($items) || isset($items[self::ACCOUNT_ENDPOINT])) return $items;
+        $new_items = array();
+        $inserted = false;
+        foreach ($items as $key => $label) {
+            $new_items[$key] = $label;
+            if ($key === 'orders') {
+                $new_items[self::ACCOUNT_ENDPOINT] = 'My Designs';
+                $inserted = true;
+            }
+        }
+        if (!$inserted) $new_items[self::ACCOUNT_ENDPOINT] = 'My Designs';
+        return $new_items;
+    }
+
+    private static function account_designs_url($args = array()) {
+        $base = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url(self::ACCOUNT_ENDPOINT)
+            : home_url('/my-account/my-designs/');
+        return $args ? add_query_arg($args, $base) : $base;
+    }
+
+    private static function account_search_matches($search, $products) {
+        $product_ids = array();
+        foreach ($products as $id => $name) {
+            if (stripos((string) $name, $search) !== false) $product_ids[] = (int) $id;
+        }
+        // Search published template names too, without revealing draft templates.
+        $template_ids = get_posts(array(
+            'post_type' => 'agas_template', 'post_status' => 'publish', 's' => $search,
+            'fields' => 'ids', 'numberposts' => 100, 'suppress_filters' => false,
+        ));
+        return array($product_ids, array_map('absint', is_array($template_ids) ? $template_ids : array()));
+    }
+
+    private static function account_designs_query($user_id, $product_id, $sort, $search, $page, $products) {
+        $args = array(
+            'post_type' => 'agas_design', 'post_status' => 'private', 'author' => $user_id,
+            'posts_per_page' => 9, 'paged' => $page, 'orderby' => 'modified',
+            'order' => $sort === 'oldest' ? 'ASC' : 'DESC', 'ignore_sticky_posts' => true,
+            'no_found_rows' => false,
+        );
+        $meta = array('relation' => 'AND');
+        if ($product_id && isset($products[$product_id])) {
+            $meta[] = array('key' => '_agas_product_id', 'value' => $product_id, 'compare' => '=');
+        }
+        if ($search !== '') {
+            if (preg_match('/^#?(\d{1,9})$/', $search, $matches)) {
+                $args['p'] = absint($matches[1]);
+            } else {
+                list($product_matches, $template_matches) = self::account_search_matches($search, $products);
+                $search_or = array('relation' => 'OR');
+                if ($product_matches) $search_or[] = array('key' => '_agas_product_id', 'value' => $product_matches, 'compare' => 'IN');
+                if ($template_matches) $search_or[] = array('key' => '_agas_template_id', 'value' => $template_matches, 'compare' => 'IN');
+                if (count($search_or) === 1) $args['post__in'] = array(0);
+                else $meta[] = $search_or;
+            }
+        }
+        if (count($meta) > 1) $args['meta_query'] = $meta;
+        return new WP_Query($args);
+    }
+
+    private static function account_size_label($opts) {
+        if (!is_array($opts) || !isset($opts['width'], $opts['height'])) return 'Custom size';
+        $w = (float) $opts['width'];
+        $h = (float) $opts['height'];
+        $unit = isset($opts['unit']) && in_array($opts['unit'], array('ft', 'in', 'cm'), true) ? $opts['unit'] : 'ft';
+        if ($w <= 0 || $h <= 0) return 'Custom size';
+        $fmt = static function ($n) { return rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.'); };
+        return $fmt($w) . ' x ' . $fmt($h) . ' ' . $unit;
+    }
+
+    /** Small shortcut on the dashboard; the full library appears only in its own tab. */
+    public static function account_dashboard_designs() {
+        if (!is_user_logged_in()) return;
+        $query = new WP_Query(array(
+            'post_type' => 'agas_design', 'post_status' => 'private',
+            'author' => get_current_user_id(), 'posts_per_page' => 1, 'fields' => 'ids',
+        ));
+        $count = (int) $query->found_posts;
+        echo '<section class="agas-account-dashboard-link" aria-label="Your saved designs">';
+        echo '<span class="agas-account-dashboard-icon" aria-hidden="true">';
+        echo '<svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7 16 4-5 3 3 3-4"/></svg></span>';
+        echo '<div><strong>My Designs</strong><p>' . esc_html($count ? sprintf(_n('%d saved design ready to edit.', '%d saved designs ready to edit.', $count, 'agas-design-studio'), $count) : 'Your saved artwork will appear here.') . '</p></div>';
+        echo '<a href="' . esc_url(self::account_designs_url()) . '">View designs <span aria-hidden="true">&rarr;</span></a></section>';
+    }
+
+    public static function account_designs_page() {
+        if (!is_user_logged_in()) {
+            echo '<p>Please sign in to view your saved designs.</p>';
+            return;
+        }
+        $user_id = get_current_user_id();
+        $products = self::designable_products();
+        $selected_product = isset($_GET['agas_product']) && is_scalar($_GET['agas_product']) ? absint($_GET['agas_product']) : 0;
+        if (!isset($products[$selected_product])) $selected_product = 0;
+        $sort = isset($_GET['agas_sort']) && is_string($_GET['agas_sort']) && sanitize_key(wp_unslash($_GET['agas_sort'])) === 'oldest' ? 'oldest' : 'recent';
+        $search = isset($_GET['agas_search']) && is_string($_GET['agas_search']) ? substr(sanitize_text_field(wp_unslash($_GET['agas_search'])), 0, 80) : '';
+        $page = isset($_GET['agas_page']) && is_scalar($_GET['agas_page']) ? max(1, absint($_GET['agas_page'])) : 1;
+        $query = self::account_designs_query($user_id, $selected_product, $sort, $search, $page, $products);
+        $total = (int) $query->found_posts;
+        $max_pages = max(1, (int) $query->max_num_pages);
+        if ($page > $max_pages) {
+            $page = $max_pages;
+            $query = self::account_designs_query($user_id, $selected_product, $sort, $search, $page, $products);
+        }
+        $filters = array();
+        if ($selected_product) $filters['agas_product'] = $selected_product;
+        if ($sort === 'oldest') $filters['agas_sort'] = 'oldest';
+        if ($search !== '') $filters['agas_search'] = $search;
+        $filter_url = self::account_designs_url($filters);
+        ?>
+        <section class="agas-account-designs" id="agas-account-designs" aria-labelledby="agas-designs-heading">
+          <div class="agas-account-heading">
+            <div><span class="agas-account-eyebrow">YOUR PERSONAL DESIGN LIBRARY</span>
+              <h2 id="agas-designs-heading">My Designs</h2>
+              <p>Pick up where you left off. Your saved artwork stays ready for its next edit.</p>
+            </div>
+            <a class="agas-account-create" href="<?php echo esc_url(self::gallery_url()); ?>">+ Create a design</a>
+          </div>
+          <form class="agas-account-filters" method="get" action="<?php echo esc_url(self::account_designs_url()); ?>" role="search" aria-label="Find your designs">
+            <label class="agas-account-field agas-account-search"><span>Search your designs</span>
+              <input type="search" name="agas_search" value="<?php echo esc_attr($search); ?>" placeholder="Product, template or design #" maxlength="80">
+            </label>
+            <label class="agas-account-field"><span>Product</span>
+              <select name="agas_product">
+                <option value="0">All products</option>
+                <?php foreach ($products as $id => $name) : ?>
+                  <option value="<?php echo esc_attr((string) $id); ?>" <?php selected($selected_product, (int) $id); ?>><?php echo esc_html($name); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <label class="agas-account-field"><span>Sort</span>
+              <select name="agas_sort"><option value="recent" <?php selected($sort, 'recent'); ?>>Recently updated</option>
+                <option value="oldest" <?php selected($sort, 'oldest'); ?>>Oldest updated</option></select>
+            </label>
+            <button type="submit" class="agas-account-filter-submit">Apply</button>
+          </form>
+          <?php if ($total) : ?>
+            <p class="agas-account-count" role="status"><?php echo esc_html(sprintf(_n('%d saved design', '%d saved designs', $total, 'agas-design-studio'), $total)); ?></p>
+            <div class="agas-account-grid">
+              <?php foreach ($query->posts as $design) :
+                if ((int) $design->post_author !== $user_id || $design->post_type !== 'agas_design') continue;
+                $id = (int) $design->ID;
+                $product_id = absint(get_post_meta($id, '_agas_product_id', true));
+                $product = function_exists('wc_get_product') ? wc_get_product($product_id) : null;
+                $product_title = $product ? $product->get_name() : 'Unavailable product';
+                $template_id = absint(get_post_meta($id, '_agas_template_id', true));
+                $tpl = $template_id ? get_post($template_id) : null;
+                $template_title = $tpl && $tpl->post_type === 'agas_template' ? $tpl->post_title : '';
+                if (strpos($template_title, ' - ') !== false) $template_title = substr($template_title, strpos($template_title, ' - ') + 3);
+                $opts = get_post_meta($id, '_agas_options', true);
+                $size = self::account_size_label($opts);
+                $sides = is_array($opts) && !empty($opts['double_sided']) ? 'Front & Back' : 'Front only';
+                $preview = self::saved_preview_url($id);
+                $usable = $product && isset($products[$product_id]);
+                $template_for_editor = $template_id && self::template_belongs($template_id, $product_id) ? $template_id : 0;
+                $edit_url = $usable ? self::editor_url($product_id, $template_for_editor, array('agas_design' => $id, 'agas_from_account' => 1)) : '';
+                $updated = get_the_modified_date('M j, Y', $id);
+                $title = $template_title !== '' ? $template_title : $product_title . ' design';
+              ?>
+                <article class="agas-account-card">
+                  <div class="agas-account-card-image">
+                    <?php if ($preview) : ?>
+                      <button type="button" class="agas-account-preview-button" data-agas-preview="<?php echo esc_url($preview); ?>" data-agas-title="<?php echo esc_attr($title); ?>" aria-label="View larger preview of <?php echo esc_attr($title); ?>">
+                        <img src="<?php echo esc_url($preview); ?>" alt="Front artwork for <?php echo esc_attr($product_title); ?> design #<?php echo esc_attr((string) $id); ?>" loading="lazy">
+                        <span class="agas-account-image-hint">View preview</span>
+                      </button>
+                    <?php else : ?>
+                      <div class="agas-account-card-empty" aria-label="Artwork preview unavailable"><svg viewBox="0 0 64 64" width="50" height="50" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="48" height="48" rx="5"/><circle cx="24" cy="24" r="5"/><path d="m13 47 15-14 9 9 7-7 9 11"/></svg><span>Preview unavailable</span></div>
+                    <?php endif; ?>
+                    <span class="agas-account-side-badge"><?php echo esc_html($sides); ?></span>
+                  </div>
+                  <div class="agas-account-card-info">
+                    <span class="agas-account-card-product"><?php echo esc_html($product_title); ?></span>
+                    <h3><?php echo esc_html($title); ?></h3>
+                    <p class="agas-account-card-meta">#<?php echo esc_html((string) $id); ?> <span aria-hidden="true">&middot;</span> <?php echo esc_html($size); ?> <span aria-hidden="true">&middot;</span> <?php echo esc_html($updated); ?></p>
+                    <?php if ($usable) : ?><a href="<?php echo esc_url($edit_url); ?>" class="agas-account-edit">Edit design <span aria-hidden="true">&rarr;</span></a>
+                    <?php else : ?><p class="agas-account-unavailable">This product is no longer available to customize.</p><?php endif; ?>
+                  </div>
+                </article>
+              <?php endforeach; ?>
+            </div>
+            <?php if ($max_pages > 1) : ?>
+              <nav class="agas-account-pagination" aria-label="My Designs pages">
+                <?php if ($page > 1) : ?><a href="<?php echo esc_url(self::account_designs_url(array_merge($filters, array('agas_page' => $page - 1)))); ?>">&larr; Previous</a><?php endif; ?>
+                <span>Page <?php echo esc_html((string) min($page, $max_pages)); ?> of <?php echo esc_html((string) $max_pages); ?></span>
+                <?php if ($page < $max_pages) : ?><a href="<?php echo esc_url(self::account_designs_url(array_merge($filters, array('agas_page' => $page + 1)))); ?>">Next &rarr;</a><?php endif; ?>
+              </nav>
+            <?php endif; ?>
+          <?php else : ?>
+            <div class="agas-account-empty" role="status">
+              <svg viewBox="0 0 64 64" width="58" height="58" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="9" width="44" height="46" rx="6"/><path d="M19 42 28 32l8 8 7-6 5 8M21 21h18"/></svg>
+              <h3><?php echo $search !== '' || $selected_product ? 'No matching designs' : 'Your design library starts here'; ?></h3>
+              <p><?php echo $search !== '' || $selected_product ? 'Try another search or clear your filters.' : 'Create a design while signed in, then save it to find it here anytime.'; ?></p>
+              <?php if ($search !== '' || $selected_product) : ?><a href="<?php echo esc_url(self::account_designs_url()); ?>">Clear filters</a><?php else : ?><a href="<?php echo esc_url(self::gallery_url()); ?>">Explore templates</a><?php endif; ?>
+            </div>
+          <?php endif; ?>
+          <p class="agas-account-guest-note">Designs saved while signed in appear here. Guest designs remain accessible through their original private save links.</p>
+          <dialog id="agas-account-preview-dialog" class="agas-account-modal" aria-label="Design preview">
+            <div class="agas-account-modal-inner"><div class="agas-account-modal-head"><strong id="agas-account-modal-title">Design preview</strong><button type="button" class="agas-account-modal-close" aria-label="Close preview">&times;</button></div>
+            <img id="agas-account-modal-image" alt="Enlarged artwork preview">
+            <p>Front artwork preview. Open the editor to see both sides and the product mockup.</p></div>
+          </dialog>
+        </section>
+        <?php
+    }
+
 }
 
 AGAS_Design_Studio::boot();
