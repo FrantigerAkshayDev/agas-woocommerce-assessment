@@ -5,3 +5,5 @@ vendor/
 *.log
 
 plugin/agas-design-studio.backup.*/
+/demo-recording/
+/work/
